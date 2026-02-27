@@ -1,0 +1,40 @@
+﻿First Name [Required],Last Name [Required],Email Address [Required],Password [Required],Password Hash Function [UPLOAD ONLY],Org Unit Path [Required],New Primary Email [UPLOAD ONLY],Recovery Email,Home Secondary Email,Work Secondary Email,Recovery Phone [MUST BE IN THE E.164 FORMAT],Work Phone,Home Phone,Mobile Phone,Work Address,Home Address,Employee ID,Employee Type,Employee Title,Manager Email,Department,Cost Center,Building ID,Floor Name,Floor Section,Change Password at Next Sign-In,New Status [UPLOAD ONLY],New Licenses [UPLOAD ONLY],Advanced Protection Program enrollment
+Amina,El-Amin,amina.el-amin@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1001,Full-time,CEO,,Exec,CC-100,HQ-SJC,10,HQ-SJC-10-01,,,,FALSE
+Thomas,Müller,thomas.muller@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1002,Full-time,COO,amina.el-amin@quadrigasoftware.com,Ops,CC-101,HQ-SJC,10,HQ-SJC-10-02,,,,FALSE
+David,Zhang,david.zhang@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1003,Full-time,CTO,amina.el-amin@quadrigasoftware.com,Eng,CC-102,HQ-SJC,10,HQ-SJC-10-03,,,,FALSE
+Xing-Hua,Li,xing-hua.li@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1004,Full-time,CPO,amina.el-amin@quadrigasoftware.com,Prod,CC-103,HQ-SJC,10,HQ-SJC-10-04,,,,FALSE
+Sarah,O'Connor,sarah.o'connor@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1005,Full-time,VP Eng,david.zhang@quadrigasoftware.com,Eng,CC-200,HQ-SJC,10,HQ-SJC-10-05,,,,FALSE
+Maya,Patel,maya.patel@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1006,Full-time,VP Prod,xing-hua.li@quadrigasoftware.com,Prod,CC-201,HQ-SJC,10,HQ-SJC-10-06,,,,FALSE
+Chloe,Jensen,chloe.jensen@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1007,Full-time,VP Design,xing-hua.li@quadrigasoftware.com,Design,CC-202,HQ-SJC,10,HQ-SJC-10-07,,,,FALSE
+Nadir,Al-Farsi,nadir.al-farsi@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1008,Full-time,VP QA,david.zhang@quadrigasoftware.com,Eng,CC-203,HQ-SJC,10,HQ-SJC-10-08,,,,FALSE
+Luca,Moretti,luca.moretti@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1009,Full-time,Dir Eng,sarah.o'connor@quadrigasoftware.com,Eng,CC-300,HQ-SJC,4,HQ-SJC-4-00,,,,FALSE
+Jean-Pierre,Lefebvre,jean-pierre.lefebvre@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1010,Full-time,Dir Prod,maya.patel@quadrigasoftware.com,Prod,CC-301,HQ-SJC,4,HQ-SJC-4-01,,,,FALSE
+Isabella,Rossi,isabella.rossi@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1011,Full-time,Dir Design,chloe.jensen@quadrigasoftware.com,Design,CC-302,HQ-SJC,4,HQ-SJC-4-02,,,,FALSE
+Elena,Rodriguez,elena.rodriguez@quadrigasoftware.com,Welcome2026!,,/fictum,,,,,,,,,,,QS-1012,Full-time,TPM,luca.moretti@quadrigasoftware.com,Eng,CC-300,HQ-SJC,4,HQ-SJC-4-03,,,,FALSE
+Kenji,Sato,kenji.sato@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1013,Full-time,EM,luca.moretti@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-L12,,,,FALSE
+Jin-Ho,Park,jin-ho.park@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1014,Full-time,PM,jean-pierre.lefebvre@quadrigasoftware.com,Prod,CC-400,HQ-SJC,4,HQ-SJC-4-L13,,,,FALSE
+Yuki,Tanaka,yuki.tanaka@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1015,Full-time,Designer,isabella.rossi@quadrigasoftware.com,Design,CC-400,HQ-SJC,4,HQ-SJC-4-L14,,,,FALSE
+Maria,Silva,maria.silva@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1016,Full-time,QA Lead,nadir.al-farsi@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-L15,,,,FALSE
+Liam,Davies,liam.davies@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1017,Full-time,SWE,kenji.sato@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-S0,,,,FALSE
+Aanya,Iyer,aanya.iyer@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1018,Full-time,SWE,kenji.sato@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-S1,,,,FALSE
+Erik,Sjöberg,erik.sjoberg@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1019,Full-time,SWE,kenji.sato@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-S2,,,,FALSE
+Fatima,Ali,fatima.ali@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1020,Full-time,SWE,kenji.sato@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-S3,,,,FALSE
+Chen,Wei,chen.wei@quadrigasoftware.com,Welcome2026!,,/fictum/platform,,,,,,,,,,,QS-1021,Full-time,SWE,kenji.sato@quadrigasoftware.com,Eng,CC-400,HQ-SJC,4,HQ-SJC-4-S4,,,,FALSE
+Amara,Okafor,amara.okafor@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1022,Full-time,EM,luca.moretti@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-L21,,,,FALSE
+Sofia,Garcia,sofia.garcia@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1023,Full-time,PM,jean-pierre.lefebvre@quadrigasoftware.com,Prod,CC-500,HQ-SJC,5,HQ-SJC-5-L22,,,,FALSE
+Fatima,Zahra,fatima.zahra@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1024,Full-time,Designer,isabella.rossi@quadrigasoftware.com,Design,CC-500,HQ-SJC,5,HQ-SJC-5-L23,,,,FALSE
+Hans,Schmidt,hans.schmidt@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1025,Full-time,QA Eng,nadir.al-farsi@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-L24,,,,FALSE
+Lars,Bakker,lars.bakker@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1026,Full-time,SWE,amara.okafor@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-S0,,,,FALSE
+Zoe,Kravitz,zoe.kravitz@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1027,Full-time,SWE,amara.okafor@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-S1,,,,FALSE
+Hiroshi,Tanabe,hiroshi.tanabe@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1028,Full-time,SWE,amara.okafor@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-S2,,,,FALSE
+Elena,Popova,elena.popova@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1029,Full-time,SWE,amara.okafor@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-S3,,,,FALSE
+Kwame,Nkrumah,kwame.nkrumah@quadrigasoftware.com,Welcome2026!,,/fictum/carthago,,,,,,,,,,,QS-1030,Full-time,SWE,amara.okafor@quadrigasoftware.com,Eng,CC-500,HQ-SJC,5,HQ-SJC-5-S4,,,,FALSE
+Sébastien,Dubois,sebastien.dubois@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1031,Full-time,EM,luca.moretti@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-L30,,,,FALSE
+Liam,Smith,liam.smith@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1032,Full-time,PM,jean-pierre.lefebvre@quadrigasoftware.com,Prod,CC-600,HQ-SJC,6,HQ-SJC-6-L31,,,,FALSE
+Oliver,Brown,oliver.brown@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1033,Full-time,Designer,isabella.rossi@quadrigasoftware.com,Design,CC-600,HQ-SJC,6,HQ-SJC-6-L32,,,,FALSE
+Priya,Sharma,priya.sharma@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1034,Full-time,QA Lead,nadir.al-farsi@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-L33,,,,FALSE
+Noor,Hassan,noor.hassan@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1035,Full-time,SWE,sebastien.dubois@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-S0,,,,FALSE
+Mateo,Hernandez,mateo.hernandez@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1036,Full-time,SWE,sebastien.dubois@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-S1,,,,FALSE
+Ingrid,Hansen,ingrid.hansen@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1037,Full-time,SWE,sebastien.dubois@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-S2,,,,FALSE
+Tariq,Aziz,tariq.aziz@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1038,Full-time,SWE,sebastien.dubois@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-S3,,,,FALSE
+Sophie,Muller,sophie.muller@quadrigasoftware.com,Welcome2026!,,/fictum/britannia,,,,,,,,,,,QS-1039,Full-time,SWE,sebastien.dubois@quadrigasoftware.com,Eng,CC-600,HQ-SJC,6,HQ-SJC-6-S4,,,,FALSE

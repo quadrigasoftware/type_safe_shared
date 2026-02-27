@@ -1,0 +1,3 @@
+#!/bin/bash
+# cat prompt.txt | gemqq --project "$@"
+cat prompt.txt | gemini -y -s "$@"

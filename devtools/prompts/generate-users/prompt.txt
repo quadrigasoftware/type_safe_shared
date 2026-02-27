@@ -1,0 +1,48 @@
+These are columns to use to generate a csv for users that will be imported into Google Workspace.
+First Name [Required],Last Name [Required],Email Address [Required],Password [Required],Password Hash Function [UPLOAD ONLY],Org Unit Path [Required],New Primary Email [UPLOAD ONLY],Recovery Email,Home Secondary Email,Work Secondary Email,Recovery Phone [MUST BE IN THE E.164 FORMAT],Work Phone,Home Phone,Mobile Phone,Work Address,Home Address,Employee ID,Employee Type,Employee Title,Manager Email,Department,Cost Center,Building ID,Floor Name,Floor Section,Change Password at Next Sign-In,New Status [UPLOAD ONLY],New Licenses [UPLOAD ONLY],Advanced Protection Program enrollment
+All file output will go to 'output' directory. This includes any scripts.
+
+Create a file named 'users-google.csv'.
+
+The file should represent a small slice of a software division within a 5000-employee company, including:
+
+1. ORGANIZATIONAL HIERARCHY:
+   - Include C-Suite (CEO, COO, CPO, CTO).
+   - 'Org Unit Path' must reflect the pod structure.
+   - The root org unit is called fictum. C-Suite members will belong to the root.
+   - Below fictum there are 3 org units: carthago, britannia, platform. These are children of fictum.
+   - Include 3 distinct working pods (platform, carthago, britannia).
+   - All employees will belong to one of these 4 organizational units.
+   - Each pod must have a correct ratio of: 1 Product Manager, 1 Designer, 1 QA Engineer/Lead, 1 engineering manager, and 4-6 Software Engineers.
+   - Include management chains up to C-Suite that have have pod leaders who report to directors and directors who report to VPs and VPs who report to C-Suite.
+   - 1 TPM for this group of pods that reports to VP of director of engineering
+   - Reporting is by function. Engineers report to engineers, product to product, etc.
+
+
+2. DATA REQUIREMENTS:
+   - Every manager mentioned must have their own corresponding employee row.
+   - All 'Email Address' values must be unique and consistent with names.
+   - Use UTF-8 with BOM for encoding.
+   - the company is quadrigasoftware.com. Email addresses will end with this.
+   - do not create phone numbers as they do not import correctly for Google users.
+   - email names must be simple ASCII. No diacritics.
+
+3. DIVERSITY & NAMES:
+   - Do not use cute or celebrity names. Use realistic names. Do not use names from fiction.
+   - Ensure a reasonable number of names are Western European (French, British, Spanish, Dutch, etc.) alongside African, Asian, Middle Eastern, and Latin American names.
+   - At least one name should include and umlaut.
+
+4. TECHNICAL FORMATTING:
+   - Ensure 'Manager Email' is correctly populated for all non-CEO rows.
+   - Set 'Change Password at Next Sign-In' to <blank>.
+   - Set 'Employee Type' to 'Full-time'.
+   - Include realistic Employee IDs, Cost Centers, and HQ Building locations.
+   - 'floor' should just be a number
+   - 'floor section' should be a combination of building, floor, desk number
+   - Seat pods together for 'floor section'.
+   - C-Suite should be a a different floor.
+
+After creating csv generate an ascii text org chart in file org-chart-google.txt
+
+Delete any scripts or other files that are generated.
+
