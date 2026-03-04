@@ -1,7 +1,10 @@
 package com.quadrigasoftware
 
 import kotlinx.css.*
-import kotlinx.css.properties.*
+import kotlinx.css.properties.BoxShadow
+import kotlinx.css.properties.TextDecoration
+import kotlinx.css.properties.Transition
+import kotlinx.css.properties.s
 import kotlinx.html.*
 
 // Helper extension to use CSS DSL inside style tag
