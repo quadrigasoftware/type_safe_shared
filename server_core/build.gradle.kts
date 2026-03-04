@@ -26,16 +26,13 @@ ktor {
     }
 }
 
-// The Sync Task to move the JAR to your private repo
-tasks.register<Copy>("syncSharedLib") {
-    dependsOn("buildFatJar")
-    from(layout.buildDirectory.file("libs/server_core.jar"))
-    into(layout.projectDirectory.file("../../portfolio_ai_app/server/libs")) // Path to your private repo
-}
-
 dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-auth-jwt")
+    implementation("io.ktor:ktor-client-core")
+    implementation("io.ktor:ktor-client-cio")
+    implementation("io.ktor:ktor-client-content-negotiation")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.ktor:ktor-server-sessions")

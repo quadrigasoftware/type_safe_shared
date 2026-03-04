@@ -6,41 +6,45 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.util.*
-import kotlinx.serialization.Serializable
 
 fun Application.configureSecurity() {
-    authentication {
-        val myRealm = "MyRealm"
-        val usersInMyRealmToHA1: Map<String, ByteArray> = mapOf(
-            // pass="test", HA1=MD5("test:MyRealm:pass")="fb12475e62dedc5c2744d98eb73b8877"
-            "test" to hex("fb12475e62dedc5c2744d98eb73b8877")
-        )
+    configureCoreSecurity()
 
+    // Add digest auth if still needed for this specific runner
+    authentication {
         digest("myDigestAuth") {
-            digestProvider { userName, realm ->
-                usersInMyRealmToHA1[userName]
+            digestProvider { userName, _ ->
+                if (userName == "test") hex("fb12475e62dedc5c2744d98eb73b8877") else null
             }
         }
     }
-    install(Sessions) {
-        cookie<MySession>("MY_SESSION") {
-            cookie.extensions["SameSite"] = "lax"
-        }
-    }
+
     routing {
+        configureCoreAuthRoutes(this@configureSecurity)
+
+        authenticate("auth-session") {
+            get("/protected/profile") {
+                val session = call.principal<MySession>()!!
+                call.respond(mapOf(
+                    "message" to "This is a protected route",
+                    "user" to session.userName,
+                    "email" to session.email,
+                    "provider" to session.provider
+                ))
+            }
+        }
+
         authenticate("myDigestAuth") {
             get("/protected/route/digest") {
                 val principal = call.principal<UserIdPrincipal>()!!
                 call.respondText("Hello ${principal.name}")
             }
         }
+
         get("/session/increment") {
             val session = call.sessions.get<MySession>() ?: MySession()
             call.sessions.set(session.copy(count = session.count + 1))
-            call.respondText("Counter is ${session.count}. Refresh to increment.")
+            call.respondText("Counter is ${session.count}. User: ${session.userName ?: "Anonymous"} (${session.email ?: "No Email"})")
         }
     }
 }
-
-@Serializable
-data class MySession(val count: Int = 0)

@@ -3,8 +3,10 @@ package com.quadrigasoftware
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 import kotlinx.css.*
 import kotlinx.html.*
 import kotlin.random.Random
@@ -36,12 +38,6 @@ fun Application.configureTemplating() {
             }
         }
         val random = Random(System.currentTimeMillis())
-
-        get("/") {
-            call.respondHtml {
-                leaderboardPage(random)
-            }
-        }
 
         get("/more-rows") {
             call.respondHtml {

@@ -9,15 +9,24 @@ import kotlin.io.path.exists
 import kotlin.io.path.useLines
 import kotlin.random.Random
 
-fun HTML.leaderboardPage(random: Random) {
+fun HTML.leaderboardPage(random: Random, session: MySession? = null) {
     head {
         title("HTMX Example")
         script(src = "/web.js") {}
-        link(rel = "stylesheet", href = "/leaderboard.css")
+         link(rel = "stylesheet", href = "/leaderboard.css")
+        headerStyles()
+        style {
+            unsafe {
+                +"""
+                    /* Additional styles for LeaderboardPage */
+                """.trimIndent()
+            }
+        }
     }
     body {
+        loginStatusHeader(session, "Leaderboard App")
         h1 {
-            +"Leaderboard"
+            +"Leaderboards"
         }
         table {
             id = "leaderboard"

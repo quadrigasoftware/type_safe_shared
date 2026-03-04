@@ -4,3 +4,29 @@ ktor:
       - com.quadrigasoftware.ApplicationKt.module
   deployment:
     port: 8080
+
+auth:
+  allowList:
+    emails:
+      - "charles@quadrigasoftware.com"
+      - "aanya.iyer@quadrigasoftware.com"
+#    domains:
+#      - "quadrigasoftware.com"
+  providers:
+    google:
+      clientId: ${GOOGLE_CLIENT_ID:-}
+      clientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      authorizeUrl: "https://accounts.google.com/o/oauth2/auth"
+      accessTokenUrl: "https://accounts.google.com/o/oauth2/token"
+      extraAuthParameters:
+        prompt: "select_account"
+    entra:
+      clientId: ${ENTRA_CLIENT_ID:-}
+      clientSecret: ${ENTRA_CLIENT_SECRET:-}
+      authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+      accessTokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+    okta:
+      clientId: ${OKTA_CLIENT_ID:-}
+      clientSecret: ${OKTA_CLIENT_SECRET:-}
+      authorizeUrl: "https://${OKTA_DOMAIN:-}/oauth2/default/v1/authorize"
+      accessTokenUrl: "https://${OKTA_DOMAIN:-}/oauth2/default/v1/token"
