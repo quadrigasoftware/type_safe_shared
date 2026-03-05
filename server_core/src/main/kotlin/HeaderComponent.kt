@@ -117,6 +117,7 @@ fun HEAD.headerStyles() {
             }
 
             rule(".ts-menu-item") {
+                display = Display.block
                 color = Color.white
                 fontSize = 1.2.rem
                 fontFamily = "sans-serif"
