@@ -10,6 +10,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
+import io.ktor.util.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -33,10 +34,14 @@ val httpClient = HttpClient(CIO) {
 }
 
 fun Application.configureCoreSecurity() {
+    val sessionSecret = environment.config.propertyOrNull("auth.session.secret")?.getString() 
+        ?: "00112233445566778899aabbccddeeff"
+
     install(Sessions) {
         cookie<MySession>("MY_SESSION") {
             cookie.path = "/"
             cookie.extensions["SameSite"] = "lax"
+            transform(SessionTransportTransformerMessageAuthentication(hex(sessionSecret)))
         }
     }
 
