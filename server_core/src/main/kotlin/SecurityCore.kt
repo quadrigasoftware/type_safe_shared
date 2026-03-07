@@ -24,6 +24,8 @@ data class MySession(
     val userName: String? = null,
     val email: String? = null,
     val provider: String? = null,
+    val roles: Set<String> = emptySet(),
+    val permissions: Set<String> = emptySet(),
     val metadata: Map<String, String> = emptyMap()
 )
 
@@ -104,35 +106,56 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
     
     configureCoreLoginRoutes(application)
 
+    val userRepository: UserRepository = try {
+        FirestoreUserRepository()
+    } catch (e: Exception) {
+        // Fallback for local development if GCP credentials are not available
+        object : UserRepository {
+            override suspend fun getUser(email: String): UserRecord? = null
+            override suspend fun saveUser(user: UserRecord) {}
+            override suspend fun deleteUser(email: String) {}
+            override suspend fun getAllUsers(): List<UserRecord> = emptyList()
+        }
+    }
+
     for (providerName in providerNames) {
-        authenticate("auth-oauth-$providerName") {
-            get("/login/$providerName") {
-            }
+        val config = try { authProviders?.config(providerName) } catch (e: Exception) { null }
+        val clientId = config?.propertyOrNull("clientId")?.getString()
+        val clientSecret = config?.propertyOrNull("clientSecret")?.getString()
 
-            get("/callback/$providerName") {
-                val principal = call.principal<OAuthAccessTokenResponse.OAuth2>()
-                if (principal != null) {
-                    val idToken = principal.extraParameters["id_token"]
-                    val payload = idToken?.let { decodeJwtPayload(it) }
-                    
-                    val email = payload?.get("email")?.jsonPrimitive?.content
-                    val name = payload?.get("name")?.jsonPrimitive?.content ?: "OAuth User"
+        if (!clientId.isNullOrBlank() && !clientSecret.isNullOrBlank()) {
+            authenticate("auth-oauth-$providerName") {
+                get("/login/$providerName") {
+                }
 
-                    // Validate Allow List
-                    if (application.isAllowed(email)) {
-                        val session = call.sessions.get<MySession>() ?: MySession()
-                        call.sessions.set(session.copy(
-                            userId = payload?.get("sub")?.jsonPrimitive?.content ?: principal.accessToken.take(10),
-                            provider = providerName,
-                            userName = name,
-                            email = email
-                        ))
-                        call.respondRedirect("/")
+                get("/callback/$providerName") {
+                    val principal = call.principal<OAuthAccessTokenResponse.OAuth2>()
+                    if (principal != null) {
+                        val idToken = principal.extraParameters["id_token"]
+                        val payload = idToken?.let { decodeJwtPayload(it) }
+                        
+                        val email = payload?.get("email")?.jsonPrimitive?.content
+                        val name = payload?.get("name")?.jsonPrimitive?.content ?: "OAuth User"
+
+                        // Validate Allow List
+                        if (application.isAllowed(email)) {
+                            val userRecord = email?.let { userRepository.getUser(it) }
+                            val session = call.sessions.get<MySession>() ?: MySession()
+                            call.sessions.set(session.copy(
+                                userId = payload?.get("sub")?.jsonPrimitive?.content ?: principal.accessToken.take(10),
+                                provider = providerName,
+                                userName = name,
+                                email = email,
+                                roles = userRecord?.roles ?: emptySet(),
+                                permissions = userRecord?.permissions ?: emptySet()
+                            ))
+                            call.respondRedirect("/")
+                        } else {
+                            call.respondText("Access Denied: Your email ($email) is not on the allow list.", status = HttpStatusCode.Forbidden)
+                        }
                     } else {
-                        call.respondText("Access Denied: Your email ($email) is not on the allow list.", status = HttpStatusCode.Forbidden)
+                        call.respondText("Login failed", status = HttpStatusCode.Unauthorized)
                     }
-                } else {
-                    call.respondText("Login failed", status = HttpStatusCode.Unauthorized)
                 }
             }
         }

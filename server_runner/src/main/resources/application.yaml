@@ -7,7 +7,7 @@ ktor:
 
 auth:
   session:
-    secret: ${SESSION_SECRET:-00112233445566778899aabbccddeeff}
+    secret: ${SESSION_SECRET}
   allowList:
     emails:
       - "charles@quadrigasoftware.com"
