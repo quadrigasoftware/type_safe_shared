@@ -12,6 +12,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.util.*
 import kotlinx.serialization.Serializable
+import java.security.MessageDigest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -33,17 +34,28 @@ val httpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
         json()
     }
-}
+    }
 
-fun Application.configureCoreSecurity() {
+    fun Application.configureCoreSecurity() {
     val sessionSecret = environment.config.propertyOrNull("auth.session.secret")?.getString() 
         ?: "00112233445566778899aabbccddeeff"
+
+    // Convert the secret to a valid hex string if it isn't one already
+    val hexSecret = try {
+        hex(sessionSecret)
+        sessionSecret
+    } catch (e: Exception) {
+        // If not valid hex, hash it to create a stable hex key
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(sessionSecret.toByteArray())
+        hash.joinToString("") { "%02x".format(it) }
+    }
 
     install(Sessions) {
         cookie<MySession>("MY_SESSION") {
             cookie.path = "/"
             cookie.extensions["SameSite"] = "lax"
-            transform(SessionTransportTransformerMessageAuthentication(hex(sessionSecret)))
+            transform(SessionTransportTransformerMessageAuthentication(hex(hexSecret)))
         }
     }
 

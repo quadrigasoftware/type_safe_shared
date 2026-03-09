@@ -59,3 +59,29 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
+
+val runWithEmulator by tasks.registering {
+    group = "development"
+    description = "Runs the Ktor server with the Firebase Emulator."
+    
+    dependsOn(":server_runner:classes")
+    
+    doFirst {
+        println("🚀 Starting Firebase Emulator and Ktor Server...")
+        val processBuilder = ProcessBuilder("firebase", "emulators:start", "--only", "firestore")
+            .directory(project.rootDir)
+            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+        
+        val emulatorProcess = processBuilder.start()
+        
+        // Ensure emulator is killed when Gradle exits
+        Runtime.getRuntime().addShutdownHook(Thread {
+            println("🛑 Shutting down Firebase Emulator...")
+            emulatorProcess.destroy()
+        })
+    }
+    
+    finalizedBy(":server_runner:run")
+}
+
