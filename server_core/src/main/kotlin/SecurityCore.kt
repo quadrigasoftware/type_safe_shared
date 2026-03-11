@@ -43,9 +43,11 @@ fun Application.configureCoreSecurity() {
 
                 oauth("auth-oauth-$providerName") {
                     urlProvider = { 
-                        val host = request.host() + (if (request.port() != 80 && request.port() != 443) ":${request.port()}" else "")
+                        var host = request.host()
+                        if (host == "0.0.0.0") host = "localhost"
+                        val portStr = if (request.port() != 80 && request.port() != 443) ":${request.port()}" else ""
                         val proto = request.header(HttpHeaders.XForwardedProto) ?: "http"
-                        "$proto://$host/callback/$providerName"
+                        "$proto://$host$portStr/callback/$providerName"
                     }
                     providerLookup = {
                         OAuthServerSettings.OAuth2ServerSettings(
