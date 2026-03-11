@@ -14,7 +14,7 @@ class CachingDirectoryProvider(
 ) : DirectoryProvider {
 
     companion object {
-        private val userCache = ConcurrentHashMap<String, CacheEntry<List<JsonObject>>>()
+        private val userCache = ConcurrentHashMap<String, CacheEntry<List<DirectoryUser>>>()
 
         fun clearCache(key: String? = null) {
             if (key != null) {
@@ -30,27 +30,27 @@ class CachingDirectoryProvider(
         val expiry: Instant
     )
 
-    override suspend fun searchUsers(query: String, fields: String?): List<JsonObject> {
+    override suspend fun searchUsers(query: String, fields: String?): List<DirectoryUser> {
         val allUsers = getAllUsersCached()
         
         val queryLower = query.lowercase().trim()
         if (queryLower.isEmpty()) return allUsers
 
         return allUsers.filter { 
-            it["primaryEmail"]?.toString()?.lowercase()?.contains(queryLower) == true ||
-            it["name"]?.toString()?.lowercase()?.contains(queryLower) == true
+            it.email.lowercase().contains(queryLower) ||
+            it.fullName.lowercase().contains(queryLower)
         }
     }
 
-    override suspend fun getUser(email: String): JsonObject? {
+    override suspend fun getUser(email: String): DirectoryUser? {
         val allUsers = getAllUsersCached()
         val emailLower = email.lowercase().trim()
         return allUsers.find { 
-            it["primaryEmail"]?.toString()?.lowercase()?.trim()?.contains(emailLower) == true 
+            it.email.lowercase().trim() == emailLower 
         }
     }
 
-    private suspend fun getAllUsersCached(): List<JsonObject> {
+    private suspend fun getAllUsersCached(): List<DirectoryUser> {
         val now = Instant.now()
         val entry = userCache[cacheKey]
 

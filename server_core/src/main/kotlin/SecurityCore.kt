@@ -1,12 +1,6 @@
 package com.quadrigasoftware
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -14,7 +8,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.util.*
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.security.MessageDigest
 import java.util.*
@@ -172,9 +165,11 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             val fields = call.request.queryParameters["fields"] ?: ""
 
             try {
-                // Returns users enriched with managerEmail and reports list
+                // Now returns a list of DirectoryUser objects directly
                 val users = provider.searchUsers(query, fields)
-                call.respond(buildJsonObject { put("users", JsonArray(users)) })
+                call.respond(buildJsonObject { 
+                    put("users", Json.encodeToJsonElement(users)) 
+                })
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, "Failed to search users: ${e.message}")
             }
@@ -197,7 +192,7 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             try {
                 val user = provider.getUser(email)
                 if (user != null) {
-                    call.respond(user)
+                    call.respond(user) // Ktor automatically serializes the data class
                 } else {
                     call.respond(HttpStatusCode.NotFound, "User not found")
                 }

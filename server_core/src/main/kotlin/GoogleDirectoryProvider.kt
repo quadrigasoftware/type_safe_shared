@@ -11,7 +11,7 @@ class GoogleDirectoryProvider(
     private val accessToken: String
 ) : DirectoryProvider {
 
-    override suspend fun searchUsers(query: String, fields: String?): List<JsonObject> {
+    override suspend fun searchUsers(query: String, fields: String?): List<DirectoryUser> {
         val allUsers = fetchAllUsers()
         val queryLower = query.lowercase().trim()
         
@@ -24,14 +24,14 @@ class GoogleDirectoryProvider(
             }
         }
 
-        return filtered.map { enrichUser(it, allUsers) }
+        return filtered.map { mapToDirectoryUser(it, allUsers) }
     }
 
-    override suspend fun getUser(email: String): JsonObject? {
+    override suspend fun getUser(email: String): DirectoryUser? {
         val allUsers = fetchAllUsers()
         val emailLower = email.lowercase().trim()
         val user = allUsers.find { it["primaryEmail"]?.jsonPrimitive?.content?.lowercase()?.trim() == emailLower }
-        return user?.let { enrichUser(it, allUsers) }
+        return user?.let { mapToDirectoryUser(it, allUsers) }
     }
 
     private suspend fun fetchAllUsers(): List<JsonObject> {
@@ -50,13 +50,14 @@ class GoogleDirectoryProvider(
         }
     }
 
-    private fun enrichUser(user: JsonObject, allUsers: List<JsonObject>): JsonObject {
+    private fun mapToDirectoryUser(user: JsonObject, allUsers: List<JsonObject>): DirectoryUser {
         val email = user["primaryEmail"]?.jsonPrimitive?.content ?: ""
+        val nameObj = user["name"]?.jsonObject
         
         // Find manager
         val managerEmail = user["relations"]?.jsonArray?.firstOrNull { 
             it.jsonObject["type"]?.jsonPrimitive?.content?.equals("manager", ignoreCase = true) == true
-        }?.jsonObject?.get("value")?.jsonPrimitive?.content ?: ""
+        }?.jsonObject?.get("value")?.jsonPrimitive?.content
 
         // Find reports
         val reports = allUsers.filter { other ->
@@ -66,10 +67,17 @@ class GoogleDirectoryProvider(
             otherManager?.lowercase()?.trim() == email.lowercase().trim()
         }.map { it["primaryEmail"]?.jsonPrimitive?.content ?: "" }
 
-        return buildJsonObject {
-            user.forEach { (key, value) -> put(key, value) }
-            put("managerEmail", managerEmail)
-            put("reports", JsonArray(reports.map { JsonPrimitive(it) }))
-        }
+        return DirectoryUser(
+            email = email,
+            firstName = nameObj?.get("givenName")?.jsonPrimitive?.content ?: "",
+            lastName = nameObj?.get("familyName")?.jsonPrimitive?.content ?: "",
+            fullName = nameObj?.get("fullName")?.jsonPrimitive?.content ?: email,
+            title = user["employeeTitle"]?.jsonPrimitive?.content,
+            department = user["department"]?.jsonPrimitive?.content,
+            orgUnitPath = user["orgUnitPath"]?.jsonPrimitive?.content,
+            managerEmail = managerEmail,
+            reports = reports,
+            floor = user["locations"]?.jsonObject?.get("floor")?.jsonPrimitive?.content
+        )
     }
 }

@@ -19,6 +19,21 @@ data class MySession(
     val metadata: Map<String, String> = emptyMap()
 )
 
+@Serializable
+data class DirectoryUser(
+    val email: String,
+    val firstName: String,
+    val lastName: String,
+    val fullName: String,
+    val title: String? = null,
+    val department: String? = null,
+    val orgUnitPath: String? = null,
+    val managerEmail: String? = null,
+    val reports: List<String> = emptyList(),
+    val floor: String? = null,
+    val metadata: Map<String, String> = emptyMap()
+)
+
 val httpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
         json()

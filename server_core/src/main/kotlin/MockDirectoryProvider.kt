@@ -4,7 +4,7 @@ import kotlinx.serialization.json.*
 
 class MockDirectoryProvider : DirectoryProvider {
 
-    override suspend fun searchUsers(query: String, fields: String?): List<JsonObject> {
+    override suspend fun searchUsers(query: String, fields: String?): List<DirectoryUser> {
         val queryLower = query.lowercase().trim()
         val filtered = if (queryLower.isEmpty()) {
             MockUserStore.users
@@ -15,22 +15,23 @@ class MockDirectoryProvider : DirectoryProvider {
             }
         }
         
-        return filtered.map { enrichUser(it) }
+        return filtered.map { mapToDirectoryUser(it) }
     }
 
-    override suspend fun getUser(email: String): JsonObject? {
+    override suspend fun getUser(email: String): DirectoryUser? {
         val emailLower = email.lowercase().trim()
         val user = MockUserStore.users.find { it["primaryEmail"]?.jsonPrimitive?.content?.lowercase()?.trim() == emailLower }
-        return user?.let { enrichUser(it) }
+        return user?.let { mapToDirectoryUser(it) }
     }
 
-    private fun enrichUser(user: JsonObject): JsonObject {
+    private fun mapToDirectoryUser(user: JsonObject): DirectoryUser {
         val email = user["primaryEmail"]?.jsonPrimitive?.content ?: ""
+        val nameObj = user["name"]?.jsonObject
         
         // Find manager
         val managerEmail = user["relations"]?.jsonArray?.firstOrNull { 
             it.jsonObject["type"]?.jsonPrimitive?.content?.equals("manager", ignoreCase = true) == true
-        }?.jsonObject?.get("value")?.jsonPrimitive?.content ?: ""
+        }?.jsonObject?.get("value")?.jsonPrimitive?.content
 
         // Find reports
         val reports = MockUserStore.users.filter { other ->
@@ -40,10 +41,17 @@ class MockDirectoryProvider : DirectoryProvider {
             otherManager?.lowercase()?.trim() == email.lowercase().trim()
         }.map { it["primaryEmail"]?.jsonPrimitive?.content ?: "" }
 
-        return buildJsonObject {
-            user.forEach { (key, value) -> put(key, value) }
-            put("managerEmail", managerEmail)
-            put("reports", JsonArray(reports.map { JsonPrimitive(it) }))
-        }
+        return DirectoryUser(
+            email = email,
+            firstName = nameObj?.get("givenName")?.jsonPrimitive?.content ?: "",
+            lastName = nameObj?.get("familyName")?.jsonPrimitive?.content ?: "",
+            fullName = nameObj?.get("fullName")?.jsonPrimitive?.content ?: email,
+            title = user["employeeTitle"]?.jsonPrimitive?.content,
+            department = user["department"]?.jsonPrimitive?.content,
+            orgUnitPath = user["orgUnitPath"]?.jsonPrimitive?.content,
+            managerEmail = managerEmail,
+            reports = reports,
+            floor = user["locations"]?.jsonObject?.get("floor")?.jsonPrimitive?.content
+        )
     }
 }
