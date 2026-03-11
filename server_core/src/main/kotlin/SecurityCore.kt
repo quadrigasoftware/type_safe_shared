@@ -110,7 +110,12 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
                                 roles = emptySet(),
                                 permissions = emptySet()
                             ))
-                            call.respondRedirect("/")
+                            
+                            // Redirect to home on the CURRENT host to ensure cookie is sent
+                            val host = call.request.host()
+                            val portStr = if (call.request.port() != 80 && call.request.port() != 443) ":${call.request.port()}" else ""
+                            val proto = call.request.header(HttpHeaders.XForwardedProto) ?: "http"
+                            call.respondRedirect("$proto://$host$portStr/")
                         } else {
                             call.respondText("Access Denied: Your email ($email) is not on the allow list.", status = HttpStatusCode.Forbidden)
                         }
