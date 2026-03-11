@@ -2,7 +2,7 @@ package com.quadrigasoftware
 
 import kotlinx.serialization.json.*
 
-class MockDirectoryProvider : DirectoryProvider {
+internal class MockDirectoryProvider : DirectoryProvider {
 
     override suspend fun searchUsers(query: String, fields: String?): DirectoryResult<List<DirectoryUser>> {
         val queryLower = query.lowercase().trim()

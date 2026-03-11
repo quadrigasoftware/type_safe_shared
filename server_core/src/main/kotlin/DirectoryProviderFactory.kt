@@ -38,4 +38,11 @@ class DirectoryProviderFactory(
             else -> null
         }
     }
+
+    /**
+     * Clears the directory cache for a specific domain or for the entire system.
+     */
+    fun clearCache(cacheKey: String? = null) {
+        CachingDirectoryProvider.clearCache(cacheKey)
+    }
 }

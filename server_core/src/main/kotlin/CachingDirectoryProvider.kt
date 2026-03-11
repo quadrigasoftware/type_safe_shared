@@ -3,11 +3,10 @@ package com.quadrigasoftware
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.ConcurrentHashMap
 import java.time.Instant
-
 /**
  * A wrapper that adds simple in-memory caching to any DirectoryProvider.
  */
-class CachingDirectoryProvider(
+internal class CachingDirectoryProvider(
     private val delegate: DirectoryProvider,
     private val cacheKey: String, // Usually the organization domain or access token hash
     private val ttlSeconds: Long = 300 // Default 5 minutes
@@ -16,7 +15,7 @@ class CachingDirectoryProvider(
     companion object {
         private val userCache = ConcurrentHashMap<String, CacheEntry<List<DirectoryUser>>>()
 
-        fun clearCache(key: String? = null) {
+        internal fun clearCache(key: String? = null) {
             if (key != null) {
                 userCache.remove(key)
             } else {

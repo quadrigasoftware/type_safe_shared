@@ -178,11 +178,11 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             
             if (domain != null) {
                 logger.info("Clearing directory cache for domain: {}", domain)
-                CachingDirectoryProvider.clearCache(domain)
+                providerFactory.clearCache(domain)
                 call.respondText("Cache cleared for domain: $domain")
             } else if (securityConfig.isMockEnabled) {
                 logger.info("Clearing mock directory cache")
-                CachingDirectoryProvider.clearCache("mock-org")
+                providerFactory.clearCache("mock-org")
                 call.respondText("Mock cache cleared")
             } else {
                 throw ProviderConfigurationException("Could not determine domain to clear cache")

@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
 
-class GoogleDirectoryProvider(
+internal class GoogleDirectoryProvider(
     private val httpClient: HttpClient,
     private val accessToken: String
 ) : DirectoryProvider {
