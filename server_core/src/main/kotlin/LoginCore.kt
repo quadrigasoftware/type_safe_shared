@@ -69,7 +69,7 @@ fun Routing.configureCoreLoginRoutes(application: Application) {
 
             val availableProviders = authProvidersList?.keys()?.map { it.split('.').first() }?.distinct()?.filter {
                 val config = authProvidersList.config(it)
-                !config.propertyOrNull("clientId")?.getString().isNullOrBlank()
+                !config.propertyOrNull("clientId")?.getString().isNullOrBlank() || it == "mock"
             } ?: emptyList()
 
             // If only one provider, redirect immediately

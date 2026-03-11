@@ -68,5 +68,28 @@ If the server starts successfully, you'll see the following output:
 2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
 2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
 ```
+
+## Mock Auth Mode
+
+For development and testing without real OAuth providers, you can enable **Mock Auth Mode**.
+
+### 1. Enable Mock Mode
+Set the following environment variable before running the server:
+```bash
+export MOCK_AUTH=true
+```
+
+### 2. Login as a Mock User
+- Visit `http://localhost:8080/login/mock` in your browser.
+- Select one of the 31 predefined mock users (e.g., Amina El-Amin, CEO).
+- You will be "logged in" with a mock session and redirected to the home page.
+
+### 3. Mock Features
+- **User Search**: `/auth/google/users?q=...` searches the internal `MockUserStore`.
+- **Hierarchy**: `/auth/google/hierarchy?email=...` builds the organizational tree using the mock data.
+- **Reference Files**:
+    - `users-mock.csv`: CSV formatted for Google Workspace import.
+    - `org-chart-mock.txt`: ASCII representation of the mock hierarchy.
+
 This project is licensed under the MIT License - see the LICENSE file for details.
 

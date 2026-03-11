@@ -1,42 +1,25 @@
 package com.quadrigasoftware
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.util.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
 import java.security.MessageDigest
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.util.*
 
-@Serializable
-data class MySession(
-    val count: Int = 0,
-    val userId: String? = null,
-    val userName: String? = null,
-    val email: String? = null,
-    val provider: String? = null,
-    val roles: Set<String> = emptySet(),
-    val permissions: Set<String> = emptySet(),
-    val metadata: Map<String, String> = emptyMap()
-)
-
-val httpClient = HttpClient(CIO) {
-    install(ContentNegotiation) {
-        json()
-    }
-    }
-
-    fun Application.configureCoreSecurity() {
+fun Application.configureCoreSecurity() {
     val sessionSecret = environment.config.propertyOrNull("auth.session.secret")?.getString() 
         ?: "00112233445566778899aabbccddeeff"
 
@@ -74,15 +57,21 @@ val httpClient = HttpClient(CIO) {
 
             val clientId = config.propertyOrNull("clientId")?.getString()
             val clientSecret = config.propertyOrNull("clientSecret")?.getString()
-            
+
             if (!clientId.isNullOrBlank() && !clientSecret.isNullOrBlank()) {
                 val extraParamsConfig = try { config.config("extraAuthParameters") } catch (e: Exception) { null }
                 val extraParams = extraParamsConfig?.keys()?.map { key ->
                     key to extraParamsConfig.property(key).getString()
                 } ?: emptyList()
 
+                val configuredScopes = config.propertyOrNull("scopes")?.getList() ?: listOf("openid", "profile", "email")
+
                 oauth("auth-oauth-$providerName") {
-                    urlProvider = { "http://localhost:8080/callback/$providerName" }
+                    urlProvider = { 
+                        val host = request.host() + (if (request.port() != 80 && request.port() != 443) ":${request.port()}" else "")
+                        val proto = request.header(HttpHeaders.XForwardedProto) ?: "http"
+                        "$proto://$host/callback/$providerName"
+                    }
                     providerLookup = {
                         OAuthServerSettings.OAuth2ServerSettings(
                             name = providerName,
@@ -91,7 +80,7 @@ val httpClient = HttpClient(CIO) {
                             requestMethod = HttpMethod.Post,
                             clientId = clientId,
                             clientSecret = clientSecret,
-                            defaultScopes = listOf("openid", "profile", "email"),
+                            defaultScopes = configuredScopes,
                             extraAuthParameters = extraParams
                         )
                     }
@@ -115,20 +104,8 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
         null
     }
     val providerNames = authProviders?.keys()?.map { it.split('.').first() }?.distinct() ?: emptyList()
-    
-    configureCoreLoginRoutes(application)
 
-    val userRepository: UserRepository = try {
-        FirestoreUserRepository()
-    } catch (e: Exception) {
-        // Fallback for local development if GCP credentials are not available
-        object : UserRepository {
-            override suspend fun getUser(email: String): UserRecord? = null
-            override suspend fun saveUser(user: UserRecord) {}
-            override suspend fun deleteUser(email: String) {}
-            override suspend fun getAllUsers(): List<UserRecord> = emptyList()
-        }
-    }
+    configureCoreLoginRoutes(application)
 
     for (providerName in providerNames) {
         val config = try { authProviders?.config(providerName) } catch (e: Exception) { null }
@@ -145,21 +122,21 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
                     if (principal != null) {
                         val idToken = principal.extraParameters["id_token"]
                         val payload = idToken?.let { decodeJwtPayload(it) }
-                        
+
                         val email = payload?.get("email")?.jsonPrimitive?.content
                         val name = payload?.get("name")?.jsonPrimitive?.content ?: "OAuth User"
 
                         // Validate Allow List
                         if (application.isAllowed(email)) {
-                            val userRecord = email?.let { userRepository.getUser(it) }
                             val session = call.sessions.get<MySession>() ?: MySession()
                             call.sessions.set(session.copy(
                                 userId = payload?.get("sub")?.jsonPrimitive?.content ?: principal.accessToken.take(10),
                                 provider = providerName,
                                 userName = name,
                                 email = email,
-                                roles = userRecord?.roles ?: emptySet(),
-                                permissions = userRecord?.permissions ?: emptySet()
+                                accessToken = principal.accessToken,
+                                roles = emptySet(),
+                                permissions = emptySet()
                             ))
                             call.respondRedirect("/")
                         } else {
@@ -182,6 +159,68 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
         }
     }
 
+    // Prototype route to search Google Workspace users
+    authenticate("auth-session") {
+        get("/auth/google/users") {
+            val session = call.sessions.get<MySession>()
+            val provider = getDirectoryProvider(session) ?: run {
+                call.respond(HttpStatusCode.BadRequest, "No directory provider available")
+                return@get
+            }
+
+            val query = call.request.queryParameters["q"] ?: ""
+            val fields = call.request.queryParameters["fields"] ?: ""
+
+            try {
+                // Returns users enriched with managerEmail and reports list
+                val users = provider.searchUsers(query, fields)
+                call.respond(buildJsonObject { put("users", JsonArray(users)) })
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Failed to search users: ${e.message}")
+            }
+        }
+
+        get("/auth/google/user") {
+            val session = call.sessions.get<MySession>()
+            val email = call.request.queryParameters["email"] ?: session?.email
+            
+            val provider = getDirectoryProvider(session) ?: run {
+                call.respond(HttpStatusCode.BadRequest, "No directory provider available")
+                return@get
+            }
+
+            if (email == null) {
+                call.respond(HttpStatusCode.BadRequest, "Requires email")
+                return@get
+            }
+
+            try {
+                val user = provider.getUser(email)
+                if (user != null) {
+                    call.respond(user)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "User not found")
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Error fetching user: ${e.message}")
+            }
+        }
+
+        post("/auth/directory/clear-cache") {
+            val session = call.sessions.get<MySession>()
+            val domain = session?.email?.split("@")?.lastOrNull()
+            
+            if (domain != null) {
+                CachingDirectoryProvider.clearCache(domain)
+                call.respondText("Cache cleared for domain: $domain")
+            } else if (System.getenv("MOCK_AUTH") == "true") {
+                CachingDirectoryProvider.clearCache("mock-org")
+                call.respondText("Mock cache cleared")
+            } else {
+                call.respond(HttpStatusCode.BadRequest, "Could not determine domain to clear")
+            }
+        }
+    }
     get("/auth/list") {
         val authProvidersList = try {
             application.environment.config.config("auth.providers")
@@ -190,13 +229,45 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
         }
         val available = authProvidersList?.keys()?.map { it.split('.').first() }?.distinct()?.filter {
             val config = authProvidersList.config(it)
-            !config.propertyOrNull("clientId")?.getString().isNullOrBlank()
+            !config.propertyOrNull("clientId")?.getString().isNullOrBlank() || it == "mock"
         } ?: emptyList()
         call.respond(available)
     }
 
+    get("/login/mock") {
+        // Simple HTML picker for mock users
+        val usersHtml = MockUserStore.users.joinToString("") { user ->
+            val email = user["primaryEmail"]?.jsonPrimitive?.content ?: ""
+            val name = user["name"]?.jsonObject?.get("fullName")?.jsonPrimitive?.content ?: email
+            "<li><a href='/mock/login?email=$email'>$name ($email)</a></li>"
+        }
+        
+        call.respondText(
+            "<html><body><h2>Select Mock User</h2><ul>$usersHtml</ul></body></html>",
+            ContentType.Text.Html
+        )
+    }
+
     get("/logout") {
         call.sessions.clear<MySession>()
+        call.respondRedirect("/")
+    }
+
+    get("/mock/login") {
+        val email = call.request.queryParameters["email"] ?: "amina.el-amin@quadrigasoftware.com"
+        val provider = call.request.queryParameters["provider"] ?: "google"
+        
+        val user = MockUserStore.users.find { it["primaryEmail"]?.jsonPrimitive?.content == email }
+        val name = user?.get("name")?.jsonObject?.get("fullName")?.jsonPrimitive?.content ?: "Mock User"
+        
+        call.sessions.set(MySession(
+            userId = email,
+            userName = name,
+            email = email,
+            provider = provider,
+            accessToken = "mock-token"
+        ))
+        // Since this is mock, we can just redirect to home
         call.respondRedirect("/")
     }
 }
@@ -212,6 +283,22 @@ private fun Application.isAllowed(email: String?): Boolean {
     if (allowedDomains.any { domain -> email.endsWith("@$domain") }) return true
     
     return false
+}
+
+private fun getDirectoryProvider(session: MySession?): DirectoryProvider? {
+    if (System.getenv("MOCK_AUTH") == "true" || session?.provider == "mock") {
+        return CachingDirectoryProvider(MockDirectoryProvider(), "mock-org")
+    }
+    
+    val token = session?.accessToken
+    val email = session?.email
+    if (session?.provider == "google" && token != null && email != null) {
+        val domain = email.split("@").lastOrNull() ?: "unknown"
+        // Cache per domain so all users in the same org share the cache
+        return CachingDirectoryProvider(GoogleDirectoryProvider(httpClient, token), domain)
+    }
+    
+    return null
 }
 
 private fun decodeJwtPayload(token: String): JsonObject? {
