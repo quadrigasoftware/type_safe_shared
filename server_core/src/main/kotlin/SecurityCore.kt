@@ -13,7 +13,6 @@ import java.security.MessageDigest
 import java.util.*
 
 fun Application.configureCoreSecurity() {
-    configureCoreErrorHandling()
     val securityConfig = loadSecurityConfig()
 
     // Convert the secret to a valid hex string if it isn't one already
