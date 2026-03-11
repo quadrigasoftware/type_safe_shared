@@ -74,6 +74,7 @@ fun Application.configureCoreSecurity() {
 
 fun Routing.configureCoreAuthRoutes(application: Application) {
     val securityConfig = application.loadSecurityConfig()
+    val providerFactory = DirectoryProviderFactory(httpClient, securityConfig)
     
     configureCoreLoginRoutes(application)
 
@@ -132,7 +133,7 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
     authenticate("auth-session") {
         get("/auth/google/users") {
             val session = call.sessions.get<MySession>()
-            val provider = getDirectoryProvider(session) ?: run {
+            val provider = providerFactory.getProvider(session) ?: run {
                 call.respond(HttpStatusCode.BadRequest, "No directory provider available")
                 return@get
             }
@@ -155,7 +156,7 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             val session = call.sessions.get<MySession>()
             val email = call.request.queryParameters["email"] ?: session?.email
             
-            val provider = getDirectoryProvider(session) ?: run {
+            val provider = providerFactory.getProvider(session) ?: run {
                 call.respond(HttpStatusCode.BadRequest, "No directory provider available")
                 return@get
             }
@@ -184,7 +185,7 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             if (domain != null) {
                 CachingDirectoryProvider.clearCache(domain)
                 call.respondText("Cache cleared for domain: $domain")
-            } else if (System.getenv("MOCK_AUTH") == "true") {
+            } else if (securityConfig.isMockEnabled) {
                 CachingDirectoryProvider.clearCache("mock-org")
                 call.respondText("Mock cache cleared")
             } else {
@@ -246,24 +247,6 @@ fun SecurityConfig.isAllowed(email: String?): Boolean {
     if (allowedDomains.any { domain -> email.endsWith("@$domain") }) return true
     
     return false
-}
-
-private fun RoutingContext.getDirectoryProvider(session: MySession?): DirectoryProvider? {
-    val securityConfig = call.application.loadSecurityConfig()
-    
-    if (securityConfig.isMockEnabled || session?.provider == "mock") {
-        return CachingDirectoryProvider(MockDirectoryProvider(), "mock-org")
-    }
-    
-    val token = session?.accessToken
-    val email = session?.email
-    if (session?.provider == "google" && token != null && email != null) {
-        val domain = email.split("@").lastOrNull() ?: "unknown"
-        // Cache per domain so all users in the same org share the cache
-        return CachingDirectoryProvider(GoogleDirectoryProvider(httpClient, token), domain)
-    }
-    
-    return null
 }
 
 private fun decodeJwtPayload(token: String): JsonObject? {
