@@ -13,6 +13,7 @@ import java.security.MessageDigest
 import java.util.*
 
 fun Application.configureCoreSecurity() {
+    configureCoreErrorHandling()
     val securityConfig = loadSecurityConfig()
 
     // Convert the secret to a valid hex string if it isn't one already
@@ -133,49 +134,33 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
     authenticate("auth-session") {
         get("/auth/google/users") {
             val session = call.sessions.get<MySession>()
-            val provider = providerFactory.getProvider(session) ?: run {
-                call.respond(HttpStatusCode.BadRequest, "No directory provider available")
-                return@get
-            }
+            val provider = providerFactory.getProvider(session) 
+                ?: throw ProviderConfigurationException("No directory provider available for current session")
 
             val query = call.request.queryParameters["q"] ?: ""
             val fields = call.request.queryParameters["fields"] ?: ""
 
-            try {
-                // Now returns a list of DirectoryUser objects directly
-                val users = provider.searchUsers(query, fields)
-                call.respond(buildJsonObject { 
-                    put("users", Json.encodeToJsonElement(users)) 
-                })
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, "Failed to search users: ${e.message}")
-            }
+            // Returns a list of DirectoryUser objects directly
+            // Any network/parsing errors will bubble up to StatusPages
+            val users = provider.searchUsers(query, fields)
+            call.respond(buildJsonObject { 
+                put("users", Json.encodeToJsonElement(users)) 
+            })
         }
 
         get("/auth/google/user") {
             val session = call.sessions.get<MySession>()
             val email = call.request.queryParameters["email"] ?: session?.email
             
-            val provider = providerFactory.getProvider(session) ?: run {
-                call.respond(HttpStatusCode.BadRequest, "No directory provider available")
-                return@get
-            }
+            val provider = providerFactory.getProvider(session)
+                ?: throw ProviderConfigurationException("No directory provider available for current session")
 
             if (email == null) {
-                call.respond(HttpStatusCode.BadRequest, "Requires email")
-                return@get
+                throw ProviderConfigurationException("Email parameter is required")
             }
 
-            try {
-                val user = provider.getUser(email)
-                if (user != null) {
-                    call.respond(user) // Ktor automatically serializes the data class
-                } else {
-                    call.respond(HttpStatusCode.NotFound, "User not found")
-                }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, "Error fetching user: ${e.message}")
-            }
+            val user = provider.getUser(email) ?: throw UserNotFoundException(email)
+            call.respond(user)
         }
 
         post("/auth/directory/clear-cache") {
@@ -183,13 +168,15 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             val domain = session?.email?.split("@")?.lastOrNull()
             
             if (domain != null) {
+                logger.info("Clearing directory cache for domain: {}", domain)
                 CachingDirectoryProvider.clearCache(domain)
                 call.respondText("Cache cleared for domain: $domain")
             } else if (securityConfig.isMockEnabled) {
+                logger.info("Clearing mock directory cache")
                 CachingDirectoryProvider.clearCache("mock-org")
                 call.respondText("Mock cache cleared")
             } else {
-                call.respond(HttpStatusCode.BadRequest, "Could not determine domain to clear")
+                throw ProviderConfigurationException("Could not determine domain to clear cache")
             }
         }
     }

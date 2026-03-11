@@ -35,6 +35,7 @@ class GoogleDirectoryProvider(
     }
 
     private suspend fun fetchAllUsers(): List<JsonObject> {
+        logger.info("Fetching all users from Google Admin SDK...")
         val response = httpClient.get("https://admin.googleapis.com/admin/directory/v1/users") {
             url {
                 parameters.append("customer", "my_customer")
@@ -43,11 +44,16 @@ class GoogleDirectoryProvider(
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
 
-        return if (response.status == HttpStatusCode.OK) {
-            response.body<JsonObject>()["users"]?.jsonArray?.map { it.jsonObject } ?: emptyList()
-        } else {
-            emptyList()
+        if (response.status != HttpStatusCode.OK) {
+            val errorBody = response.body<String>()
+            logger.error("Google API error: Status={}, Body={}", response.status, errorBody)
+            throw ExternalProviderException("Google", "Failed to fetch users: $errorBody")
         }
+
+        val body = response.body<JsonObject>()
+        val users = body["users"]?.jsonArray?.map { it.jsonObject } ?: emptyList()
+        logger.info("Successfully fetched {} users from Google.", users.size)
+        return users
     }
 
     private fun mapToDirectoryUser(user: JsonObject, allUsers: List<JsonObject>): DirectoryUser {

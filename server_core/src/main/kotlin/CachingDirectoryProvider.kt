@@ -55,10 +55,12 @@ class CachingDirectoryProvider(
         val entry = userCache[cacheKey]
 
         if (entry != null && entry.expiry.isAfter(now)) {
+            logger.debug("Cache hit for key: {}", cacheKey)
             return entry.data
         }
 
         // Cache miss or expired
+        logger.info("Cache miss or expired for key: {}. Fetching fresh data...", cacheKey)
         val freshUsers = delegate.searchUsers("")
         userCache[cacheKey] = CacheEntry(freshUsers, now.plusSeconds(ttlSeconds))
         
