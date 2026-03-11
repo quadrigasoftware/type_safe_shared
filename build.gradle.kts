@@ -3,6 +3,7 @@ plugins {
     kotlin("multiplatform") version "2.3.0" apply false
     id("io.ktor.plugin") version "3.4.0" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.0" apply false
+    id("org.jetbrains.dokka") version "2.0.0" apply false
 }
 
 subprojects {

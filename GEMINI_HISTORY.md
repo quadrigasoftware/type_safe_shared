@@ -43,3 +43,32 @@ This document records the prompts and engineering tasks performed by Gemini on b
     - Updated `.gitignore` to exclude `.kotlin/`, `*.log`, and OS metadata.
     - Managed commits and pushes across `type_safe_shared` and `portfolio_ai_app` repositories.
     - Optimized imports across the entire core library.
+
+## 7. Advanced Architectural Refactoring
+- **Prompt**: "to insure that server_shared is a well factored library, how should kotlin interfaces to it look like?... implement provider factory... implement standard result type... harden library API"
+- **Actions**:
+    - **Type-Safe Models**: Created `DirectoryUser` to replace raw JSON, ensuring compile-time safety.
+    - **Explicit Error Handling**: Introduced `DirectoryResult` sealed class (Success, Error, NotFound) to communicate failure modes via the type system.
+    - **Factory Pattern**: Refactored `DirectoryProviderFactory` to manage provider lifecycle and enforce caching.
+    - **API Hardening**: Marked provider implementations as `internal` to enforce modular boundaries and hide implementation details.
+    - **Type-Safe Config**: Refactored `SecurityConfig` and `ConfigLoader.kt` to centralize and validate settings.
+
+## 8. Developer Experience & Documentation
+- **Prompt**: "are the methods / classes that are available documented?... make class / interface diagrams of the architecture"
+- **Actions**:
+    - **KDoc**: Added professional documentation to all public interfaces and methods.
+    - **Mermaid Diagrams**: Created `ARCHITECTURE.md` with class and data-flow diagrams.
+    - **Session Log**: Created `GEMINI_HISTORY.md` (this file) to record all engineering decisions.
+
+## 9. Library Distribution & Publishing
+- **Prompt**: "if I want to turn server_core into an artifact that could be published, what needs to be done?"
+- **Actions**:
+    - **Maven Publish**: Integrated the `maven-publish` plugin for standard JAR distribution.
+    - **Dokka**: Configured the Dokka engine to generate Javadoc JARs from KDoc.
+    - **Sources JAR**: Enabled automatic packaging of source code for IDE integration.
+    - **Dependency Refinement**: Switched shared dependencies to `api` to ensure correct transitive resolution for library consumers.
+
+## 10. Bug Fixes & Reliability
+- **Action**: Resolved a startup crash caused by duplicate `StatusPages` installation.
+- **Action**: Fixed a "loop detected" bug in the hierarchy builder caused by premature root visitation.
+- **Action**: Implemented auto-correction for `0.0.0.0` host to `localhost` in OAuth redirects to comply with Google security policies.

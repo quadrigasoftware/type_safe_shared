@@ -4,37 +4,44 @@ val kotlinx_html_version: String by project
 val logback_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.3.0"
-    id("io.ktor.plugin") version "3.4.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.0"
-    application
-}
-
-application {
-    // Even if this is a library, the FatJar task needs a placeholder
-    // or the path to your shared initialization if you have one.
-    mainClass.set("com.quadrigasoftware.portfolioai.shared.DummyKt")
+    kotlin("jvm")
+    id("io.ktor.plugin")
+    id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.dokka")
+    `maven-publish`
 }
 
 kotlin {
     jvmToolchain(21)
 }
 
-ktor {
-    fatJar {
-        archiveFileName.set("server_core.jar")
-    }
+java {
+    withSourcesJar()
+}
+
+// Disable Ktor's fatJar/shadowJar since this is a library
+tasks.named("shadowJar") {
+    enabled = false
+}
+
+// Configure Dokka to generate Javadoc JAR
+val dokkaJavadocJar by tasks.registering(Jar::class) {
+    from(tasks.dokkaHtml)
+    archiveClassifier.set("javadoc")
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core")
-    implementation("io.ktor:ktor-server-auth")
+    // Shared dependencies that consumers also need (api)
+    api("io.ktor:ktor-server-core")
+    api("io.ktor:ktor-server-auth")
+    api("io.ktor:ktor-client-core")
+    api("io.ktor:ktor-serialization-kotlinx-json")
+    
+    // Internal dependencies (implementation)
     implementation("io.ktor:ktor-server-auth-jwt")
-    implementation("io.ktor:ktor-client-core")
     implementation("io.ktor:ktor-client-cio")
     implementation("io.ktor:ktor-client-content-negotiation")
     implementation("io.ktor:ktor-server-content-negotiation")
-    implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("io.ktor:ktor-server-sessions")
     implementation("com.google.cloud:google-cloud-firestore:3.30.0")
@@ -51,6 +58,38 @@ dependencies {
     implementation("io.ktor:ktor-server-netty")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
+    
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            artifact(dokkaJavadocJar)
+            
+            groupId = "com.quadrigasoftware"
+            artifactId = "server-core"
+            version = project.version.toString()
+
+            pom {
+                name.set("Server Core Library")
+                description.set("Shared authentication and directory services for Quadriga Software.")
+                url.set("https://github.com/quadrigasoftware/type_safe_shared")
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("quadrigasoftware")
+                        name.set("Quadriga Software")
+                    }
+                }
+            }
+        }
+    }
 }
