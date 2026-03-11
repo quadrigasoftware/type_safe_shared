@@ -13,17 +13,15 @@ import java.security.MessageDigest
 import java.util.*
 
 fun Application.configureCoreSecurity() {
-    val sessionSecret = environment.config.propertyOrNull("auth.session.secret")?.getString() 
-        ?: "00112233445566778899aabbccddeeff"
+    val securityConfig = loadSecurityConfig()
 
     // Convert the secret to a valid hex string if it isn't one already
     val hexSecret = try {
-        hex(sessionSecret)
-        sessionSecret
+        hex(securityConfig.sessionSecret)
+        securityConfig.sessionSecret
     } catch (e: Exception) {
-        // If not valid hex, hash it to create a stable hex key
         val digest = MessageDigest.getInstance("SHA-256")
-        val hash = digest.digest(sessionSecret.toByteArray())
+        val hash = digest.digest(securityConfig.sessionSecret.toByteArray())
         hash.joinToString("") { "%02x".format(it) }
     }
 
@@ -36,28 +34,12 @@ fun Application.configureCoreSecurity() {
     }
 
     authentication {
-        val authProviders = try {
-            this@configureCoreSecurity.environment.config.config("auth.providers")
-        } catch (e: Exception) {
-            null
-        }
-
-        val providerNames = authProviders?.keys()?.map { it.split('.').first() }?.distinct() ?: emptyList()
-
-        for (providerName in providerNames) {
-            val config = try { authProviders?.config(providerName) } catch (e: Exception) { null }
-            if (config == null) continue
-
-            val clientId = config.propertyOrNull("clientId")?.getString()
-            val clientSecret = config.propertyOrNull("clientSecret")?.getString()
+        for ((providerName, config) in securityConfig.providers) {
+            val clientId = config.clientId
+            val clientSecret = config.clientSecret
 
             if (!clientId.isNullOrBlank() && !clientSecret.isNullOrBlank()) {
-                val extraParamsConfig = try { config.config("extraAuthParameters") } catch (e: Exception) { null }
-                val extraParams = extraParamsConfig?.keys()?.map { key ->
-                    key to extraParamsConfig.property(key).getString()
-                } ?: emptyList()
-
-                val configuredScopes = config.propertyOrNull("scopes")?.getList() ?: listOf("openid", "profile", "email")
+                val configuredScopes = if (config.scopes.isNotEmpty()) config.scopes else listOf("openid", "profile", "email")
 
                 oauth("auth-oauth-$providerName") {
                     urlProvider = { 
@@ -68,13 +50,13 @@ fun Application.configureCoreSecurity() {
                     providerLookup = {
                         OAuthServerSettings.OAuth2ServerSettings(
                             name = providerName,
-                            authorizeUrl = config.propertyOrNull("authorizeUrl")?.getString() ?: "",
-                            accessTokenUrl = config.propertyOrNull("accessTokenUrl")?.getString() ?: "",
+                            authorizeUrl = config.authorizeUrl ?: "",
+                            accessTokenUrl = config.accessTokenUrl ?: "",
                             requestMethod = HttpMethod.Post,
                             clientId = clientId,
                             clientSecret = clientSecret,
                             defaultScopes = configuredScopes,
-                            extraAuthParameters = extraParams
+                            extraAuthParameters = config.extraAuthParameters
                         )
                     }
                     client = httpClient
@@ -91,19 +73,13 @@ fun Application.configureCoreSecurity() {
 }
 
 fun Routing.configureCoreAuthRoutes(application: Application) {
-    val authProviders = try {
-        application.environment.config.config("auth.providers")
-    } catch (e: Exception) {
-        null
-    }
-    val providerNames = authProviders?.keys()?.map { it.split('.').first() }?.distinct() ?: emptyList()
-
+    val securityConfig = application.loadSecurityConfig()
+    
     configureCoreLoginRoutes(application)
 
-    for (providerName in providerNames) {
-        val config = try { authProviders?.config(providerName) } catch (e: Exception) { null }
-        val clientId = config?.propertyOrNull("clientId")?.getString()
-        val clientSecret = config?.propertyOrNull("clientSecret")?.getString()
+    for ((providerName, config) in securityConfig.providers) {
+        val clientId = config.clientId
+        val clientSecret = config.clientSecret
 
         if (!clientId.isNullOrBlank() && !clientSecret.isNullOrBlank()) {
             authenticate("auth-oauth-$providerName") {
@@ -120,7 +96,7 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
                         val name = payload?.get("name")?.jsonPrimitive?.content ?: "OAuth User"
 
                         // Validate Allow List
-                        if (application.isAllowed(email)) {
+                        if (securityConfig.isAllowed(email)) {
                             val session = call.sessions.get<MySession>() ?: MySession()
                             call.sessions.set(session.copy(
                                 userId = payload?.get("sub")?.jsonPrimitive?.content ?: principal.accessToken.take(10),
@@ -217,15 +193,10 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
         }
     }
     get("/auth/list") {
-        val authProvidersList = try {
-            application.environment.config.config("auth.providers")
-        } catch (e: Exception) {
-            null
-        }
-        val available = authProvidersList?.keys()?.map { it.split('.').first() }?.distinct()?.filter {
-            val config = authProvidersList.config(it)
-            !config.propertyOrNull("clientId")?.getString().isNullOrBlank() || it == "mock"
-        } ?: emptyList()
+        val securityConfig = call.application.loadSecurityConfig()
+        val available = securityConfig.providers.filter { (name, config) ->
+            !config.clientId.isNullOrBlank() || name == "mock"
+        }.keys.toList()
         call.respond(available)
     }
 
@@ -267,12 +238,9 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
     }
 }
 
-private fun Application.isAllowed(email: String?): Boolean {
+fun SecurityConfig.isAllowed(email: String?): Boolean {
     if (email == null) return false
-    val config = try { environment.config.config("auth.allowList") } catch (e: Exception) { return true }
-    
-    val allowedEmails = config.propertyOrNull("emails")?.getList() ?: emptyList()
-    val allowedDomains = config.propertyOrNull("domains")?.getList() ?: emptyList()
+    if (allowedEmails.isEmpty() && allowedDomains.isEmpty()) return true
     
     if (email in allowedEmails) return true
     if (allowedDomains.any { domain -> email.endsWith("@$domain") }) return true
@@ -280,8 +248,10 @@ private fun Application.isAllowed(email: String?): Boolean {
     return false
 }
 
-private fun getDirectoryProvider(session: MySession?): DirectoryProvider? {
-    if (System.getenv("MOCK_AUTH") == "true" || session?.provider == "mock") {
+private fun RoutingContext.getDirectoryProvider(session: MySession?): DirectoryProvider? {
+    val securityConfig = call.application.loadSecurityConfig()
+    
+    if (securityConfig.isMockEnabled || session?.provider == "mock") {
         return CachingDirectoryProvider(MockDirectoryProvider(), "mock-org")
     }
     

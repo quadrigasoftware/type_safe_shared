@@ -34,6 +34,24 @@ data class DirectoryUser(
     val metadata: Map<String, String> = emptyMap()
 )
 
+data class AuthProviderConfig(
+    val name: String,
+    val clientId: String?,
+    val clientSecret: String?,
+    val authorizeUrl: String?,
+    val accessTokenUrl: String?,
+    val scopes: List<String> = emptyList(),
+    val extraAuthParameters: List<Pair<String, String>> = emptyList()
+)
+
+data class SecurityConfig(
+    val sessionSecret: String,
+    val providers: Map<String, AuthProviderConfig>,
+    val allowedEmails: Set<String>,
+    val allowedDomains: Set<String>,
+    val isMockEnabled: Boolean = System.getenv("MOCK_AUTH") == "true"
+)
+
 val httpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
         json()
