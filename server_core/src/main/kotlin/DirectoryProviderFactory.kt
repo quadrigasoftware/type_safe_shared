@@ -3,16 +3,25 @@ package com.quadrigasoftware
 import io.ktor.client.*
 
 /**
- * Factory responsible for creating and caching DirectoryProviders based on the user's session
- * and the application's security configuration.
+ * Orchestrates the selection, initialization, and caching of [DirectoryProvider] implementations.
+ * 
+ * This factory ensures that the correct data source (e.g., Google or Mock) is used based on 
+ * the user's current session and that caching is consistently applied across the application.
  */
 class DirectoryProviderFactory(
     private val httpClient: HttpClient,
     private val securityConfig: SecurityConfig
 ) {
     /**
-     * Returns the appropriate DirectoryProvider for the given session.
-     * Handles caching and mock-mode transitions automatically.
+     * Resolves and returns a [DirectoryProvider] appropriate for the provided [session].
+     * 
+     * - If [SecurityConfig.isMockEnabled] is true, returns a [MockDirectoryProvider].
+     * - If the session provider is "google", returns a [GoogleDirectoryProvider].
+     * - All real providers are automatically wrapped in a [CachingDirectoryProvider] 
+     *   scoped to the user's organization domain.
+     * 
+     * @param session The current user session containing identity and tokens.
+     * @return A ready-to-use [DirectoryProvider], or null if no provider can be resolved.
      */
     fun getProvider(session: MySession?): DirectoryProvider? {
         // 1. Check for Mock Mode
@@ -40,7 +49,9 @@ class DirectoryProviderFactory(
     }
 
     /**
-     * Clears the directory cache for a specific domain or for the entire system.
+     * Invalidates the directory cache.
+     * 
+     * @param cacheKey The specific domain/key to clear. If null, clears the entire cache.
      */
     fun clearCache(cacheKey: String? = null) {
         CachingDirectoryProvider.clearCache(cacheKey)

@@ -20,6 +20,12 @@ data class MySession(
     val metadata: Map<String, String> = emptyMap()
 )
 
+/**
+ * A type-safe representation of a user within the organizational directory.
+ * 
+ * This model abstracts away the specific schemas of external providers (like Google or Microsoft)
+ * and provides a consistent set of fields for use across the application.
+ */
 @Serializable
 data class DirectoryUser(
     val email: String,
@@ -30,19 +36,32 @@ data class DirectoryUser(
     val department: String? = null,
     val orgUnitPath: String? = null,
     val managerEmail: String? = null,
+    /** Emails of users who report directly to this user. */
     val reports: List<String> = emptyList(),
+    /** Emails of groups this user is a member of. */
     val groups: List<String> = emptyList(),
     val floor: String? = null,
     val metadata: Map<String, String> = emptyMap()
 )
 
+/**
+ * Represents the result of a directory operation.
+ */
 sealed class DirectoryResult<out T> {
+    /** Indicates the operation was successful and returned [data]. */
     data class Success<T>(val data: T) : DirectoryResult<T>()
+    
+    /** Indicates the operation failed with a specific [message] and [status]. */
     data class Error(val message: String, val status: HttpStatusCode = HttpStatusCode.InternalServerError) : DirectoryResult<Nothing>()
+    
+    /** Indicates the requested resource (e.g., a user) could not be found. */
     object NotFound : DirectoryResult<Nothing>()
 
     /**
-     * Unwraps the result, returning data on success or throwing appropriate exception on failure.
+     * Unwraps the result, returning data on success or throwing a [DirectoryException] on failure.
+     * 
+     * Useful for thin routes where global error handling is configured.
+     * @throws DirectoryException if the result is Error or NotFound.
      */
     fun getOrThrow(): T {
         return when (this) {
