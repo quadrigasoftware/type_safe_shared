@@ -166,7 +166,10 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             }
 
             val user = provider.getUser(email) ?: throw UserNotFoundException(email)
-            call.respond(user)
+            val groups = provider.getGroups(email)
+            
+            // Return user enriched with groups
+            call.respond(user.copy(groups = groups))
         }
 
         post("/auth/directory/clear-cache") {

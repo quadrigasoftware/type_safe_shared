@@ -50,6 +50,12 @@ class CachingDirectoryProvider(
         }
     }
 
+    override suspend fun getGroups(email: String): List<String> {
+        // We could cache groups specifically, but for now we delegate
+        // Note: If groups are already enriched in the user object, we could return them from cache
+        return delegate.getGroups(email)
+    }
+
     private suspend fun getAllUsersCached(): List<DirectoryUser> {
         val now = Instant.now()
         val entry = userCache[cacheKey]

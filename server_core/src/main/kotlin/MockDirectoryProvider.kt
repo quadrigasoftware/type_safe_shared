@@ -24,6 +24,11 @@ class MockDirectoryProvider : DirectoryProvider {
         return user?.let { mapToDirectoryUser(it) }
     }
 
+    override suspend fun getGroups(email: String): List<String> {
+        val user = getUser(email)
+        return user?.groups ?: emptyList()
+    }
+
     private fun mapToDirectoryUser(user: JsonObject): DirectoryUser {
         val email = user["primaryEmail"]?.jsonPrimitive?.content ?: ""
         val nameObj = user["name"]?.jsonObject
@@ -41,6 +46,8 @@ class MockDirectoryProvider : DirectoryProvider {
             otherManager?.lowercase()?.trim() == email.lowercase().trim()
         }.map { it["primaryEmail"]?.jsonPrimitive?.content ?: "" }
 
+        val groups = user["groups"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+
         return DirectoryUser(
             email = email,
             firstName = nameObj?.get("givenName")?.jsonPrimitive?.content ?: "",
@@ -51,6 +58,7 @@ class MockDirectoryProvider : DirectoryProvider {
             orgUnitPath = user["orgUnitPath"]?.jsonPrimitive?.content,
             managerEmail = managerEmail,
             reports = reports,
+            groups = groups,
             floor = user["locations"]?.jsonObject?.get("floor")?.jsonPrimitive?.content
         )
     }

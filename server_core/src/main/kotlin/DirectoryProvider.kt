@@ -10,4 +10,9 @@ interface DirectoryProvider {
      * Get a single user by email.
      */
     suspend fun getUser(email: String): DirectoryUser?
+
+    /**
+     * Get groups for a specific user.
+     */
+    suspend fun getGroups(email: String): List<String>
 }

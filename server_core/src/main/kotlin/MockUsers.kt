@@ -52,6 +52,14 @@ object MockUserStore {
         first: String, last: String, email: String, manager: String?, 
         title: String, orgPath: String, dept: String, floor: String
     ): JsonObject {
+        val groups = mutableListOf("all-employees@quadrigasoftware.com")
+        if (title.contains("CEO") || title.contains("COO") || title.contains("CPO") || title.contains("CTO")) groups.add("exec-group@quadrigasoftware.com")
+        if (orgPath.contains("platform")) groups.add("team-platform@quadrigasoftware.com")
+        if (orgPath.contains("carthago")) groups.add("team-carthago@quadrigasoftware.com")
+        if (orgPath.contains("britannia")) groups.add("team-britannia@quadrigasoftware.com")
+        if (dept == "Eng") groups.add("eng-all@quadrigasoftware.com")
+        if (title.contains("Manager") || title.contains("Director") || title.contains("VP")) groups.add("management-all@quadrigasoftware.com")
+
         return buildJsonObject {
             put("primaryEmail", email)
             putJsonObject("name") {
@@ -62,6 +70,9 @@ object MockUserStore {
             put("orgUnitPath", orgPath)
             put("employeeTitle", title)
             put("department", dept)
+            putJsonArray("groups") {
+                groups.forEach { add(it) }
+            }
             putJsonArray("relations") {
                 if (manager != null) {
                     addJsonObject {

@@ -34,6 +34,27 @@ class GoogleDirectoryProvider(
         return user?.let { mapToDirectoryUser(it, allUsers) }
     }
 
+    override suspend fun getGroups(email: String): List<String> {
+        logger.info("Fetching groups for user: {}", email)
+        val response = httpClient.get("https://admin.googleapis.com/admin/directory/v1/groups") {
+            url {
+                parameters.append("userKey", email)
+            }
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
+
+        if (response.status != HttpStatusCode.OK) {
+            val errorBody = response.body<String>()
+            logger.error("Google Groups API error: Status={}, Body={}", response.status, errorBody)
+            return emptyList()
+        }
+
+        val body = response.body<JsonObject>()
+        return body["groups"]?.jsonArray?.map { 
+            it.jsonObject["email"]?.jsonPrimitive?.content ?: "" 
+        } ?: emptyList()
+    }
+
     private suspend fun fetchAllUsers(): List<JsonObject> {
         logger.info("Fetching all users from Google Admin SDK...")
         val response = httpClient.get("https://admin.googleapis.com/admin/directory/v1/users") {
@@ -83,6 +104,7 @@ class GoogleDirectoryProvider(
             orgUnitPath = user["orgUnitPath"]?.jsonPrimitive?.content,
             managerEmail = managerEmail,
             reports = reports,
+            groups = emptyList(), // Groups are fetched on-demand or via specific enrichment
             floor = user["locations"]?.jsonObject?.get("floor")?.jsonPrimitive?.content
         )
     }

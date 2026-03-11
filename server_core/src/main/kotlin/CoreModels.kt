@@ -30,6 +30,7 @@ data class DirectoryUser(
     val orgUnitPath: String? = null,
     val managerEmail: String? = null,
     val reports: List<String> = emptyList(),
+    val groups: List<String> = emptyList(),
     val floor: String? = null,
     val metadata: Map<String, String> = emptyMap()
 )
