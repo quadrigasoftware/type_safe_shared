@@ -4,7 +4,7 @@ import kotlinx.serialization.json.*
 
 class MockDirectoryProvider : DirectoryProvider {
 
-    override suspend fun searchUsers(query: String, fields: String?): List<DirectoryUser> {
+    override suspend fun searchUsers(query: String, fields: String?): DirectoryResult<List<DirectoryUser>> {
         val queryLower = query.lowercase().trim()
         val filtered = if (queryLower.isEmpty()) {
             MockUserStore.users
@@ -15,18 +15,26 @@ class MockDirectoryProvider : DirectoryProvider {
             }
         }
         
-        return filtered.map { mapToDirectoryUser(it) }
+        return DirectoryResult.Success(filtered.map { mapToDirectoryUser(it) })
     }
 
-    override suspend fun getUser(email: String): DirectoryUser? {
+    override suspend fun getUser(email: String): DirectoryResult<DirectoryUser> {
         val emailLower = email.lowercase().trim()
         val user = MockUserStore.users.find { it["primaryEmail"]?.jsonPrimitive?.content?.lowercase()?.trim() == emailLower }
-        return user?.let { mapToDirectoryUser(it) }
+        return if (user != null) {
+            DirectoryResult.Success(mapToDirectoryUser(user))
+        } else {
+            DirectoryResult.NotFound
+        }
     }
 
-    override suspend fun getGroups(email: String): List<String> {
-        val user = getUser(email)
-        return user?.groups ?: emptyList()
+    override suspend fun getGroups(email: String): DirectoryResult<List<String>> {
+        val userResult = getUser(email)
+        return when (userResult) {
+            is DirectoryResult.Success -> DirectoryResult.Success(userResult.data.groups)
+            is DirectoryResult.NotFound -> DirectoryResult.NotFound
+            is DirectoryResult.Error -> userResult
+        }
     }
 
     private fun mapToDirectoryUser(user: JsonObject): DirectoryUser {

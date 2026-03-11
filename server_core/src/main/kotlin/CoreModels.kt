@@ -3,6 +3,7 @@ package com.quadrigasoftware
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 
@@ -34,6 +35,23 @@ data class DirectoryUser(
     val floor: String? = null,
     val metadata: Map<String, String> = emptyMap()
 )
+
+sealed class DirectoryResult<out T> {
+    data class Success<T>(val data: T) : DirectoryResult<T>()
+    data class Error(val message: String, val status: HttpStatusCode = HttpStatusCode.InternalServerError) : DirectoryResult<Nothing>()
+    object NotFound : DirectoryResult<Nothing>()
+
+    /**
+     * Unwraps the result, returning data on success or throwing appropriate exception on failure.
+     */
+    fun getOrThrow(): T {
+        return when (this) {
+            is Success -> data
+            is NotFound -> throw DirectoryException("Resource not found", HttpStatusCode.NotFound)
+            is Error -> throw DirectoryException(message, status)
+        }
+    }
+}
 
 data class AuthProviderConfig(
     val name: String,

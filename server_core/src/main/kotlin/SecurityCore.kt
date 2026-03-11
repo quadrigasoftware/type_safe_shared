@@ -147,8 +147,8 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             val fields = call.request.queryParameters["fields"] ?: ""
 
             // Returns a list of DirectoryUser objects directly
-            // Any network/parsing errors will bubble up to StatusPages
-            val users = provider.searchUsers(query, fields)
+            // Any network/parsing errors will bubble up to StatusPages via getOrThrow()
+            val users = provider.searchUsers(query, fields).getOrThrow()
             call.respond(buildJsonObject { 
                 put("users", Json.encodeToJsonElement(users)) 
             })
@@ -165,8 +165,8 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
                 throw ProviderConfigurationException("Email parameter is required")
             }
 
-            val user = provider.getUser(email) ?: throw UserNotFoundException(email)
-            val groups = provider.getGroups(email)
+            val user = provider.getUser(email).getOrThrow()
+            val groups = provider.getGroups(email).getOrThrow()
             
             // Return user enriched with groups
             call.respond(user.copy(groups = groups))

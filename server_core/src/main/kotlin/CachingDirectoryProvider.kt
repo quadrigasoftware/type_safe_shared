@@ -30,46 +30,60 @@ class CachingDirectoryProvider(
         val expiry: Instant
     )
 
-    override suspend fun searchUsers(query: String, fields: String?): List<DirectoryUser> {
-        val allUsers = getAllUsersCached()
-        
-        val queryLower = query.lowercase().trim()
-        if (queryLower.isEmpty()) return allUsers
-
-        return allUsers.filter { 
-            it.email.lowercase().contains(queryLower) ||
-            it.fullName.lowercase().contains(queryLower)
+    override suspend fun searchUsers(query: String, fields: String?): DirectoryResult<List<DirectoryUser>> {
+        val allUsersResult = getAllUsersCached()
+        return when (allUsersResult) {
+            is DirectoryResult.Success -> {
+                val queryLower = query.lowercase().trim()
+                val filtered = if (queryLower.isEmpty()) {
+                    allUsersResult.data
+                } else {
+                    allUsersResult.data.filter { 
+                        it.email.lowercase().contains(queryLower) ||
+                        it.fullName.lowercase().contains(queryLower)
+                    }
+                }
+                DirectoryResult.Success(filtered)
+            }
+            is DirectoryResult.NotFound -> DirectoryResult.NotFound
+            is DirectoryResult.Error -> allUsersResult
         }
     }
 
-    override suspend fun getUser(email: String): DirectoryUser? {
-        val allUsers = getAllUsersCached()
-        val emailLower = email.lowercase().trim()
-        return allUsers.find { 
-            it.email.lowercase().trim() == emailLower 
+    override suspend fun getUser(email: String): DirectoryResult<DirectoryUser> {
+        val allUsersResult = getAllUsersCached()
+        return when (allUsersResult) {
+            is DirectoryResult.Success -> {
+                val emailLower = email.lowercase().trim()
+                val user = allUsersResult.data.find { it.email.lowercase().trim() == emailLower }
+                if (user != null) DirectoryResult.Success(user) else DirectoryResult.NotFound
+            }
+            is DirectoryResult.NotFound -> DirectoryResult.NotFound
+            is DirectoryResult.Error -> allUsersResult
         }
     }
 
-    override suspend fun getGroups(email: String): List<String> {
-        // We could cache groups specifically, but for now we delegate
-        // Note: If groups are already enriched in the user object, we could return them from cache
+    override suspend fun getGroups(email: String): DirectoryResult<List<String>> {
         return delegate.getGroups(email)
     }
 
-    private suspend fun getAllUsersCached(): List<DirectoryUser> {
+    private suspend fun getAllUsersCached(): DirectoryResult<List<DirectoryUser>> {
         val now = Instant.now()
         val entry = userCache[cacheKey]
 
         if (entry != null && entry.expiry.isAfter(now)) {
             logger.debug("Cache hit for key: {}", cacheKey)
-            return entry.data
+            return DirectoryResult.Success(entry.data)
         }
 
         // Cache miss or expired
         logger.info("Cache miss or expired for key: {}. Fetching fresh data...", cacheKey)
-        val freshUsers = delegate.searchUsers("")
-        userCache[cacheKey] = CacheEntry(freshUsers, now.plusSeconds(ttlSeconds))
-        
-        return freshUsers
+        return when (val freshResult = delegate.searchUsers("")) {
+            is DirectoryResult.Success -> {
+                userCache[cacheKey] = CacheEntry(freshResult.data, now.plusSeconds(ttlSeconds))
+                freshResult
+            }
+            else -> freshResult
+        }
     }
 }

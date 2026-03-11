@@ -11,8 +11,13 @@ class GoogleDirectoryProvider(
     private val accessToken: String
 ) : DirectoryProvider {
 
-    override suspend fun searchUsers(query: String, fields: String?): List<DirectoryUser> {
-        val allUsers = fetchAllUsers()
+    override suspend fun searchUsers(query: String, fields: String?): DirectoryResult<List<DirectoryUser>> {
+        val allUsers = try {
+            fetchAllUsers()
+        } catch (e: ExternalProviderException) {
+            return DirectoryResult.Error(e.message, e.status)
+        }
+
         val queryLower = query.lowercase().trim()
         
         val filtered = if (queryLower.isEmpty()) {
@@ -24,17 +29,27 @@ class GoogleDirectoryProvider(
             }
         }
 
-        return filtered.map { mapToDirectoryUser(it, allUsers) }
+        return DirectoryResult.Success(filtered.map { mapToDirectoryUser(it, allUsers) })
     }
 
-    override suspend fun getUser(email: String): DirectoryUser? {
-        val allUsers = fetchAllUsers()
+    override suspend fun getUser(email: String): DirectoryResult<DirectoryUser> {
+        val allUsers = try {
+            fetchAllUsers()
+        } catch (e: ExternalProviderException) {
+            return DirectoryResult.Error(e.message, e.status)
+        }
+
         val emailLower = email.lowercase().trim()
         val user = allUsers.find { it["primaryEmail"]?.jsonPrimitive?.content?.lowercase()?.trim() == emailLower }
-        return user?.let { mapToDirectoryUser(it, allUsers) }
+        
+        return if (user != null) {
+            DirectoryResult.Success(mapToDirectoryUser(user, allUsers))
+        } else {
+            DirectoryResult.NotFound
+        }
     }
 
-    override suspend fun getGroups(email: String): List<String> {
+    override suspend fun getGroups(email: String): DirectoryResult<List<String>> {
         logger.info("Fetching groups for user: {}", email)
         val response = httpClient.get("https://admin.googleapis.com/admin/directory/v1/groups") {
             url {
@@ -43,16 +58,19 @@ class GoogleDirectoryProvider(
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
 
+        if (response.status == HttpStatusCode.NotFound) return DirectoryResult.NotFound
         if (response.status != HttpStatusCode.OK) {
             val errorBody = response.body<String>()
             logger.error("Google Groups API error: Status={}, Body={}", response.status, errorBody)
-            return emptyList()
+            return DirectoryResult.Error("Google Groups API error: $errorBody", response.status)
         }
 
         val body = response.body<JsonObject>()
-        return body["groups"]?.jsonArray?.map { 
+        val groups = body["groups"]?.jsonArray?.map { 
             it.jsonObject["email"]?.jsonPrimitive?.content ?: "" 
         } ?: emptyList()
+        
+        return DirectoryResult.Success(groups)
     }
 
     private suspend fun fetchAllUsers(): List<JsonObject> {
