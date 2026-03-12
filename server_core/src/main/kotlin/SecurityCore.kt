@@ -176,6 +176,10 @@ fun Routing.configureCoreAuthRoutes(application: Application) {
             val session = call.sessions.get<MySession>()
             val domain = session?.email?.split("@")?.lastOrNull()
             
+            if (!securityConfig.features.directoryCache) {
+                throw DirectoryException("Directory cache management is disabled for this organization", HttpStatusCode.Forbidden)
+            }
+
             if (domain != null) {
                 logger.info("Clearing directory cache for domain: {}", domain)
                 providerFactory.clearCache(domain)

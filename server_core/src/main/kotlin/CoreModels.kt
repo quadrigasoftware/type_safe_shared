@@ -72,6 +72,17 @@ sealed class DirectoryResult<out T> {
     }
 }
 
+/**
+ * Togglable application features.
+ */
+@Serializable
+data class AppFeatures(
+    val leaderboard: Boolean = true,
+    val orgChart: Boolean = true,
+    val search: Boolean = true,
+    val directoryCache: Boolean = true
+)
+
 data class AuthProviderConfig(
     val name: String,
     val clientId: String?,
@@ -87,6 +98,7 @@ data class SecurityConfig(
     val providers: Map<String, AuthProviderConfig>,
     val allowedEmails: Set<String>,
     val allowedDomains: Set<String>,
+    val features: AppFeatures = AppFeatures(),
     val isMockEnabled: Boolean = System.getenv("MOCK_AUTH") == "true"
 )
 

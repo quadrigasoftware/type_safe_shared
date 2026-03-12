@@ -39,3 +39,8 @@ auth:
       accessTokenUrl: "https://${OKTA_DOMAIN:-}/oauth2/default/v1/token"
     mock:
       enabled: true
+  features:
+    leaderboard: ${FEATURE_LEADERBOARD:-true}
+    orgChart: ${FEATURE_ORG_CHART:-true}
+    search: ${FEATURE_SEARCH:-true}
+    directoryCache: ${FEATURE_CACHE:-true}

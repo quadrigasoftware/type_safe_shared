@@ -40,11 +40,20 @@ fun Application.loadSecurityConfig(): SecurityConfig {
 
     val isMockActive = System.getenv("MOCK_AUTH") == "true" || (providers["mock"]?.name != null)
 
+    val featuresConfig = try { authConfig.config("features") } catch (e: Exception) { null }
+    val features = AppFeatures(
+        leaderboard = featuresConfig?.propertyOrNull("leaderboard")?.getString()?.toBoolean() ?: true,
+        orgChart = featuresConfig?.propertyOrNull("orgChart")?.getString()?.toBoolean() ?: true,
+        search = featuresConfig?.propertyOrNull("search")?.getString()?.toBoolean() ?: true,
+        directoryCache = featuresConfig?.propertyOrNull("directoryCache")?.getString()?.toBoolean() ?: true
+    )
+
     return SecurityConfig(
         sessionSecret = sessionSecret,
         providers = providers,
         allowedEmails = allowedEmails,
         allowedDomains = allowedDomains,
+        features = features,
         isMockEnabled = isMockActive
     )
 }
