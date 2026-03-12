@@ -91,5 +91,22 @@ export MOCK_AUTH=true
     - `users-mock.csv`: CSV formatted for Google Workspace import.
     - `org-chart-mock.txt`: ASCII representation of the mock hierarchy.
 
+## Enterprise Identity Support
+
+This library is built for large-scale enterprise deployment, providing native support for the "Big Three" Identity Providers (IdP) that power over 80% of the modern business market.
+
+| Provider | Market Segment | Capabilities |
+| :--- | :--- | :--- |
+| **Microsoft Entra ID** | Global 2000 / Fortune 500 | Full functional hierarchy, Group discovery via Graph API. |
+| **Google Workspace** | Startups / Mid-Market / Tech | Organizational search, Manager relations via Admin SDK. |
+| **Okta** | Best-of-Breed / Multi-Cloud | User profiles, Group memberships, Dashboard "Tile" support. |
+| **Mock Provider** | Local Development | 31-user functional organizational slice for rapid prototyping. |
+
+### Key Enterprise Features:
+- **Type-Safe Models**: Standardized `DirectoryUser` model regardless of the underlying IdP.
+- **Domain-Isolated Caching**: Automatic, performant in-memory caching with organization-level isolation.
+- **Unified Error Handling**: Consistent JSON error reporting for all directory operations.
+- **Modular Design**: Swappable provider architecture via `DirectoryProviderFactory`.
+
 This project is licensed under the MIT License - see the LICENSE file for details.
 
