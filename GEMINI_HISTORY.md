@@ -80,3 +80,11 @@ This document records the prompts and engineering tasks performed by Gemini on b
     - Implemented support for search, detailed profiles, manager/report relationships, and group memberships.
     - Updated `DirectoryProviderFactory` to support "entra" as a first-class provider.
     - Created `ONBOARDING_ENTRA.md` with step-by-step instructions for IT Administrators.
+
+## 12. Okta Integration
+- **Prompt**: "implement and document okta integration and onboarding."
+- **Action**: 
+    - Created `OktaDirectoryProvider.kt` using Okta Users and Groups APIs.
+    - Implemented support for search, profile retrieval, and group discovery.
+    - Updated `DirectoryProviderFactory` to support "okta" and automatically resolve the Okta domain from configuration.
+    - Created `ONBOARDING_OKTA.md` including instructions for enabling the Okta dashboard "Tile" via IdP-initiated login.

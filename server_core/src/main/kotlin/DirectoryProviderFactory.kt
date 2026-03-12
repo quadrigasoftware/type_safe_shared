@@ -50,7 +50,17 @@ class DirectoryProviderFactory(
                     cacheKey = domain
                 )
             }
-            // Future providers like "okta" go here
+            "okta" -> {
+                val domain = email.split("@").lastOrNull() ?: "unknown"
+                // Okta requires the domain for API calls
+                val oktaDomain = securityConfig.providers["okta"]?.authorizeUrl
+                    ?.substringAfter("https://")?.substringBefore("/") ?: "okta.com"
+                
+                CachingDirectoryProvider(
+                    delegate = OktaDirectoryProvider(httpClient, token, oktaDomain),
+                    cacheKey = domain
+                )
+            }
             else -> null
         }
     }
