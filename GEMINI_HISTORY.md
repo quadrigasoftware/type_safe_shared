@@ -72,3 +72,11 @@ This document records the prompts and engineering tasks performed by Gemini on b
 - **Action**: Resolved a startup crash caused by duplicate `StatusPages` installation.
 - **Action**: Fixed a "loop detected" bug in the hierarchy builder caused by premature root visitation.
 - **Action**: Implemented auto-correction for `0.0.0.0` host to `localhost` in OAuth redirects to comply with Google security policies.
+
+## 11. Microsoft Entra ID (Azure AD) Integration
+- **Prompt**: "implement and document entra including onboarding"
+- **Action**: 
+    - Created `EntraDirectoryProvider.kt` using Microsoft Graph API.
+    - Implemented support for search, detailed profiles, manager/report relationships, and group memberships.
+    - Updated `DirectoryProviderFactory` to support "entra" as a first-class provider.
+    - Created `ONBOARDING_ENTRA.md` with step-by-step instructions for IT Administrators.

@@ -43,7 +43,14 @@ class DirectoryProviderFactory(
                     cacheKey = domain
                 )
             }
-            // Future providers like "entra" or "okta" go here
+            "entra" -> {
+                val domain = email.split("@").lastOrNull() ?: "unknown"
+                CachingDirectoryProvider(
+                    delegate = EntraDirectoryProvider(httpClient, token),
+                    cacheKey = domain
+                )
+            }
+            // Future providers like "okta" go here
             else -> null
         }
     }
