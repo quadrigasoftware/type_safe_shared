@@ -26,7 +26,7 @@ Create the unique keys that Portfolio-AI will use to communicate with your Direc
 3.  **Application Type**: Select **Web application**.
 4.  **Name**: "Portfolio-AI Directory Integration"
 5.  **Authorized Redirect URIs**: Add your organization's dedicated Portfolio-AI URL:
-    -   `https://[your-company-subdomain].a.run.app/callback/google`
+    -   `https://[your-company].quadrigasoftware.com/callback/google`
 6.  **Secure Handover**: Copy the **Client ID** and **Client Secret**. These act as the "Key" and "Lock" for your integration.
 
 ## 4. Finalize Workspace Trust
