@@ -1,42 +1,42 @@
-# Google Workspace Onboarding Guide
+# Connecting Portfolio-AI to Your Google Workspace
 
-To enable Portfolio-AI for your organization, a Google Workspace Administrator must complete the following steps in the **Google Cloud Console** and the **Google Workspace Admin Console**.
+This guide explains how to authorize Portfolio-AI to securely access your organization's directory (Users, Managers, and Groups) using standard Google Workspace integration protocols.
 
-## 1. Google Cloud Project Setup
-1.  **Create/Select a Project**: Go to the [Google Cloud Console](https://console.cloud.google.com/) and ensure you have a project selected.
-2.  **Enable Admin SDK API**:
-    -   Navigate to **APIs & Services > Library**.
-    -   Search for **"Admin SDK API"**.
-    -   Click **Enable**. (This allows the app to see the organizational hierarchy).
+## Overview
+The integration uses a Google Cloud "Service Project" as a secure bridge between Portfolio-AI and your Workspace Directory. This ensures that you retain full ownership and control over the connection at all times.
 
-## 2. Configure OAuth Consent Screen
-1.  Navigate to **APIs & Services > OAuth consent screen**.
-2.  **User Type**: Select **Internal** (This restricts the app to your organization only).
-3.  **Scopes**: Click **Add or Remove Scopes** and manually add:
-    -   `openid`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/userinfo.profile`
-    -   `https://www.googleapis.com/auth/admin.directory.user.readonly` (Required for organization search and hierarchy).
-4.  Complete the app registration and save.
+## 1. Enable Directory Access (Admin SDK)
+Your Workspace Directory is accessed via the **Admin SDK**. This must be activated in your integration project:
+1.  Open the [Integration Library](https://console.cloud.google.com/apis/library/admin.googleapis.com).
+2.  Click **Enable**. This allows Portfolio-AI to visualize your organizational hierarchy and team structures.
 
-## 3. Create OAuth 2.0 Credentials
-1.  Navigate to **APIs & Services > Credentials**.
+## 2. Configure Your Integration Brand
+Define how the sign-in screen appears to your employees:
+1.  Navigate to the [Internal Consent Configuration](https://console.cloud.google.com/apis/credentials/consent).
+2.  Select **Internal** (limiting access only to your verified employees).
+3.  **Scopes**: Add the following Directory permissions to allow the app to read-only the org structure:
+    -   `openid`, `email`, `profile`
+    -   `https://www.googleapis.com/auth/admin.directory.user.readonly` (Organization/Manager search)
+    -   `https://www.googleapis.com/auth/admin.directory.group.readonly` (Team/Group discovery)
+
+## 3. Generate Secure Integration Keys
+Create the unique keys that Portfolio-AI will use to communicate with your Directory:
+1.  Go to the [API Credentials Page](https://console.cloud.google.com/apis/credentials).
 2.  Click **Create Credentials > OAuth client ID**.
 3.  **Application Type**: Select **Web application**.
-4.  **Name**: "Portfolio-AI"
-5.  **Authorized Redirect URIs**: Add your application's callback URL:
-    -   `https://your-app-url.a.run.app/callback/google`
-    -   (For local testing): `http://localhost:8080/callback/google`
-6.  **Copy Credentials**: Save your **Client ID** and **Client Secret**. These will be needed for deployment.
+4.  **Name**: "Portfolio-AI Directory Integration"
+5.  **Authorized Redirect URIs**: Add your organization's dedicated Portfolio-AI URL:
+    -   `https://[your-company-subdomain].a.run.app/callback/google`
+6.  **Secure Handover**: Copy the **Client ID** and **Client Secret**. These act as the "Key" and "Lock" for your integration.
 
-## 4. Google Workspace Admin Permissions
-By default, Google Workspace restricts organizational directory access.
-1.  Go to the [Google Workspace Admin Console](https://admin.google.com/).
-2.  Navigate to **Security > Access and data control > API controls**.
-3.  Ensure **"Trust internal apps"** is enabled, or add your OAuth Client ID as a **Trusted App**.
-4.  **Admin Role**: The user who first logs into the app to perform directory-wide functions MUST have at least **Help Desk Admin** or **User Management Admin** privileges (specifically "Users: Read" permission).
+## 4. Finalize Workspace Trust
+To complete the connection, you must explicitly trust this integration within your Workspace security policy:
+1.  Open the [Workspace Admin API Controls](https://admin.google.com/ac/owl).
+2.  Ensure **"Trust internal apps"** is enabled, or manually add your **Client ID** (from Step 3) as a **Trusted App**.
+3.  **Privilege Check**: The first user to authorize the app must be a Workspace Administrator with "Users: Read" permissions to verify the initial directory sync.
 
-## 5. Deployment Configuration
-Provide the following environment variables to your Cloud Run instance:
--   `GOOGLE_CLIENT_ID`: (From Step 3)
--   `GOOGLE_CLIENT_SECRET`: (From Step 3)
--   `SESSION_SECRET`: (A random 64-character hex string)
--   `ALLOWED_DOMAINS`: Your organization domain (e.g., `acme.com`)
+## 5. Summary Checklist
+Please provide the following to the Portfolio-AI hosting team:
+- [ ] **Directory Client ID**
+- [ ] **Directory Client Secret**
+- [ ] **Organization Domain** (e.g., `acme.com`)
